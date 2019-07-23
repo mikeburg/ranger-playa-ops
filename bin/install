@@ -7,8 +7,8 @@ set -x
 github_org_url=https://github.com/burningmantech
 
 echo "** Creating data directory"
-mkdir -p data data/certs src
-chmod 777 data
+mkdir -p data data/certs data/mysql data/postfix src
+chmod 777 data/mysql data/postfix
 
 echo "** Installing repositories."
 echo "** You may be prompted for a github account and password in order to pull down the old Clubhouse 1 repository."

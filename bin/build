@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 if [[ $# -eq 0 ]] ; then
   echo "Supply a service name to rebuild: api, classic, client, db, smtpd"
