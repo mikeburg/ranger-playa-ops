@@ -2,7 +2,7 @@
 
 Install the following packages:
 * certbot
-* Docker version 18.09.07 or later
+* Docker version 19.03.0 or later
 * Docker Compose version 1.24.0 or later
 * git
 
