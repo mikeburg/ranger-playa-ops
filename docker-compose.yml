@@ -1,0 +1,125 @@
+#
+# Docker Compose for on playa operations
+#
+#
+version: '3.7'
+services:
+
+  # API Backend
+  api:
+    build:
+      context: ./src/api
+      dockerfile: Dockerfile
+    image: apiserver:prod
+    tty: true
+    deploy:
+      restart_policy:
+        condition: on-failure
+    ports:
+      - "80"
+    environment:
+      RANGER_DB_USER_NAME: "rangers"
+      RANGER_DB_HOST_NAME: "db"
+      RANGER_CLUBHOUSE_SMTP_PORT: "25"
+      RANGER_CLUBHOUSE_SMTP_SERVER: "smtpd"
+      MAIL_ENCRYPTION: ""
+    depends_on:
+      - db
+    deploy:
+      replicas: 2
+
+  # Client Service
+  client:
+    build:
+      context: ./src/client
+      dockerfile: Dockerfile
+    image: client:prod
+    deploy:
+      restart_policy:
+        condition: on-failure
+    tty: true
+    ports:
+      - "80"
+
+  # Classic Clubhouse
+  classic:
+    build:
+      context: ./src/classic
+      dockerfile: ./docker-playa/Dockerfile
+    image: classic:prod
+    deploy:
+      restart_policy:
+        condition: on-failure
+    tty: true
+    ports:
+      - "80"
+    environment:
+      RANGER_DB_USER_NAME: "rangers"
+      RANGER_DB_HOST_NAME: "db"
+      RANGER_CLUBHOUSE_CLUBHOUSE2_URL: "/client"
+      RANGER_CLUBHOUSE_DUAL_CLUBHOUSE: "TRUE"
+      RANGER_CLUBHOUSE_ENVIRONMENT: "Production"
+      RANGER_CLUBHOUSE_MAIL_TRANSPORT: "smtp"
+      RANGER_CLUBHOUSE_SMTP_SERVER: "smtpd"
+    depends_on:
+      - db
+
+  # Web server load balancer/frontend
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    image: nginx:prod
+    deploy:
+      restart_policy:
+        condition: on-failure
+    tty: true
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./data/certs:/etc/nginx/certs
+    depends_on:
+      - api
+      - client
+
+
+  #MySQL Service
+  db:
+    image: mysql:5.6
+    deploy:
+      restart_policy:
+        condition: on-failure
+    tty: true
+    ports:
+       - "8306:3306"
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+    environment:
+      MYSQL_DATABASE: "rangers"
+      MYSQL_USER: "rangers"
+      MYSQL_ROOT_HOST: "%"
+
+  # SMTP Relay Server
+  smtpd:
+    build:
+      context: ./smtpd
+      dockerfile: Dockerfile
+    image: smtpd:prod
+    tty: true
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+    ports:
+      - "587"
+      - "25"
+    environment:
+      HOSTNAME: "ranger-clubhouse.nv.burningman.org"
+      MASQUERADED_DOMAINS: "burningman.org"
+      ALLOWED_SENDER_DOMAINS: "burningman.org"
+      RELAYHOST: "email-smtp.us-west-2.amazonaws.com"
+
+
+    volumes:
+      - ./data/postfix:/var/spool/postfix

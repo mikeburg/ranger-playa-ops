@@ -1,0 +1,27 @@
+#!/bin/sh
+
+set -e
+set -u
+set -x
+
+github_org_url=https://github.com/burningmantech
+
+echo "** Creating data directory"
+mkdir -p data data/certs src
+chmod 777 data
+
+echo "** Installing repositories."
+echo "** You may be prompted for a github account and password in order to pull down the old Clubhouse 1 repository."
+
+echo "** Cloning Clubhouse 1 repo"
+git clone ${github_org_url}/ranger-secret-clubhouse src/classic
+
+echo "** Cloning Clubhouse 2 API repo"
+git clone ${github_org_url}/ranger-clubhouse-api src/api
+
+echo "** Cloning Clubhouse 2 Client repo"
+git clone ${github_org_url}/ranger-clubhouse-web src/client
+
+echo "** Repositories have been installed"
+
+echo "Read the INSTALL.md file on how to build and deploy the ranger stack."

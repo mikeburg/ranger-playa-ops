@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# Update a services
+
+if [[ $# -eq 0 ]] ; then
+  echo "Update a service with a newly build container."
+  echo "Usage: $0 <service name>"
+  exit 1
+fi
+
+exec docker service update --force "ranger_$@"

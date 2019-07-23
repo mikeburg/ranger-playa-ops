@@ -1,0 +1,4 @@
+#!/bin/sh
+
+echo "** Building all Ranger stack images"
+exec docker-compose -f docker-compose.yml -f secrets.yml build
