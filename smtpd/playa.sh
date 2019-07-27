@@ -13,3 +13,6 @@ postconf -e "default_destination_recipient_limit=50"
 postconf -e "default_destination_concurrency_limit=1"
 # Delay by 2 seconds to reconnect.
 postconf -e "default_destination_rate_delay=2"
+
+# Simply pass everything to SES, don't try to verify.
+postconf -e "smtpd_recipient_restrictions=permit_mynetworks"

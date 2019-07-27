@@ -57,9 +57,6 @@ services:
     tty: true
     ports:
       - "80"
-    dns:
-      - 8.8.8.8
-      - 8.8.4.4
     depends_on:
       - db
 
@@ -116,6 +113,9 @@ services:
       - "587"
       - "25"
     env_file: .rangers.env
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     environment:
       HOSTNAME: "ranger-clubhouse.nv.burningman.org"
       MASQUERADED_DOMAINS: "burningman.org"
