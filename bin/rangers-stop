@@ -1,0 +1,5 @@
+#!/bin/sh
+
+echo "** Stopping stack"
+
+docker stack rm rangers

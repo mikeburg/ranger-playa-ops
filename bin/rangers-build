@@ -1,0 +1,11 @@
+#!/bin/bash
+
+if [[ $# -eq 0 ]] ; then
+  echo "Build a specific service image."
+  echo "Usage: $0 {api|classic|client|db|nginx|smtpd}"
+  exit 1
+fi
+
+echo "** Building service $@"
+
+docker-compose -f docker-compose.yml build "$@"

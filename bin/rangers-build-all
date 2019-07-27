@@ -1,0 +1,6 @@
+#!/bin/sh
+
+set -x
+
+echo "** Building all stack images"
+exec docker-compose -f docker-compose.yml build

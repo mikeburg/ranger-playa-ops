@@ -1,0 +1,39 @@
+#!/bin/bash
+
+ops_dir="$(cd "$(dirname "$0")/.." && pwd)";
+
+ops_bin=${ops_dir}/bin
+backup_dir=${ops_dir}/data/backups
+timestamp=$(date +'%Y-%m-%d-%H-%M')
+clubhouse_tmp=$(mktemp /tmp/backup.XXXXXX.sql)
+
+function finish {
+  rm -f ${clubhouse_tmp}
+}
+
+trap finish EXIT INT QUIT
+
+# Bash magic! $SECONDS holds how many seconds have elapsed
+SECONDS=0
+
+mkdir -p ${backup_dir}
+
+options=""
+
+if [ "$1" == "full" ]; then
+    echo "** Full Clubhouse backup"
+    backup="${backup_dir}/${timestamp}-clubhouse-full.sql.gz"
+else
+    echo "** Partial Clubhouse backup (ignoring log table)"
+    backup="${backup_dir}/${timestamp}-clubhouse-partial.sql.gz"
+    options="--ignore-table=rangers.log"
+fi
+
+echo "** Backing up to ${backup}"
+${ops_bin}/rangers-exec db /bin/bash -c "/usr/bin/mysqldump ${options} -u rangers --password=\"\${MYSQL_PASSWORD}\" rangers" > ${clubhouse_tmp}
+echo "** Compressing"
+gzip < ${clubhouse_tmp} > ${backup}
+
+echo "*** Finished in ${SECONDS} seconds."
+
+exit 0

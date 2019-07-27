@@ -3,32 +3,31 @@
 #
 #
 version: '3.7'
-services:
 
-  # API Backend
+services:
+  # API backend
   api:
     build:
       context: ./src/api
       dockerfile: Dockerfile
     image: apiserver:prod
+    env_file: .rangers.env
     tty: true
     deploy:
       restart_policy:
         condition: on-failure
+        delay: 5s
+        max_attempts: 3
     ports:
       - "80"
-    environment:
-      RANGER_DB_USER_NAME: "rangers"
-      RANGER_DB_HOST_NAME: "db"
-      RANGER_CLUBHOUSE_SMTP_PORT: "25"
-      RANGER_CLUBHOUSE_SMTP_SERVER: "smtpd"
-      MAIL_ENCRYPTION: ""
+    volumes:
+      - ./data/mugshots:/var/www/application/storage/mugshots
     depends_on:
       - db
     deploy:
       replicas: 2
 
-  # Client Service
+  # Clubhouse 2 frontend
   client:
     build:
       context: ./src/client
@@ -37,6 +36,8 @@ services:
     deploy:
       restart_policy:
         condition: on-failure
+        delay: 5s
+        max_attempts: 3
     tty: true
     ports:
       - "80"
@@ -47,24 +48,18 @@ services:
       context: ./src/classic
       dockerfile: ./docker-playa/Dockerfile
     image: classic:prod
+    env_file: .rangers.env
     deploy:
       restart_policy:
         condition: on-failure
+        delay: 5s
+        max_attempts: 3
     tty: true
     ports:
       - "80"
-    environment:
-      RANGER_DB_USER_NAME: "rangers"
-      RANGER_DB_HOST_NAME: "db"
-      RANGER_CLUBHOUSE_CLUBHOUSE2_URL: "/client"
-      RANGER_CLUBHOUSE_DUAL_CLUBHOUSE: "TRUE"
-      RANGER_CLUBHOUSE_ENVIRONMENT: "Production"
-      RANGER_CLUBHOUSE_MAIL_TRANSPORT: "smtp"
-      RANGER_CLUBHOUSE_SMTP_SERVER: "smtpd"
     dns:
       - 8.8.8.8
       - 8.8.4.4
-
     depends_on:
       - db
 
@@ -77,32 +72,33 @@ services:
     deploy:
       restart_policy:
         condition: on-failure
+        delay: 5s
+        max_attempts: 3
     tty: true
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - ./data/certs:/etc/nginx/certs
+      - ./data/mugshots:/mugshots
     depends_on:
       - api
       - client
 
-
   #MySQL Service
   db:
     image: mysql:5.6
+    env_file: .rangers.env
     deploy:
       restart_policy:
         condition: on-failure
+        delay: 5s
+        max_attempts: 3
     tty: true
     ports:
        - "8306:3306"
     volumes:
       - ./data/mysql:/var/lib/mysql
-    environment:
-      MYSQL_DATABASE: "rangers"
-      MYSQL_USER: "rangers"
-      MYSQL_ROOT_HOST: "%"
 
   # SMTP Relay Server
   smtpd:
@@ -114,10 +110,12 @@ services:
     deploy:
       restart_policy:
         condition: on-failure
-
+        delay: 5s
+        max_attempts: 3
     ports:
       - "587"
       - "25"
+    env_file: .rangers.env
     environment:
       HOSTNAME: "ranger-clubhouse.nv.burningman.org"
       MASQUERADED_DOMAINS: "burningman.org"

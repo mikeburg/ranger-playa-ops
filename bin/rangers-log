@@ -1,0 +1,9 @@
+#!/bin/sh
+
+if [[ $# -eq 0 ]] ; then
+  echo "Show a service logs"
+  echo "Usage: $0 {api|client|classic|smtpd|db|nginx}";
+  exit 1;
+fi
+
+exec docker service logs -f --raw "rangers_$@"

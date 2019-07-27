@@ -2,4 +2,4 @@
 
 echo "** Deploying Ranger stack (may receive warning about 'Ignoring unsupported options' -- safe to disregard)"
 
-docker stack deploy -c docker-compose.yml -c secrets.yml ranger
+docker stack deploy -c docker-compose.yml rangers

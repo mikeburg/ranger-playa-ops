@@ -19,6 +19,10 @@ https://docs.docker.com/install/linux/docker-ce/ubuntu/
 To install Docker Compose visit:
 https://docs.docker.com/compose/install/
 
+# Add basic mailer
+
+$ apt-get install mailutils
+
 ## Container names
 
 | Name    | Description                        | Built from           |

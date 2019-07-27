@@ -4,8 +4,8 @@
 
 if [[ $# -eq 0 ]] ; then
   echo "Update a service with a newly build container."
-  echo "Usage: $0 <service name>"
+  echo "Usage: $0 {api|classic|client|db|nginx}"
   exit 1
 fi
 
-exec docker service update --force "ranger_$@"
+exec docker service update --force "rangers_$@"

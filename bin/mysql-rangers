@@ -1,3 +1,0 @@
-#!/bin/sh
-
-exec mysql --host=127.0.0.1 --port=8306 -u rangers rangers
