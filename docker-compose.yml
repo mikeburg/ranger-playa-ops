@@ -19,7 +19,7 @@ services:
         delay: 5s
         max_attempts: 3
     ports:
-      - "80"
+      - "8200:80"
     volumes:
       - ./data/mugshots:/var/www/application/storage/mugshots
     depends_on:
@@ -40,7 +40,7 @@ services:
         max_attempts: 3
     tty: true
     ports:
-      - "80"
+      - "8100:80"
 
   # Classic Clubhouse
   classic:
@@ -56,7 +56,7 @@ services:
         max_attempts: 3
     tty: true
     ports:
-      - "80"
+      - "8300:80"
     depends_on:
       - db
 
@@ -110,8 +110,8 @@ services:
         delay: 5s
         max_attempts: 3
     ports:
-      - "587"
-      - "25"
+      - "8587:587"
+      - "8025:25"
     env_file: .rangers.env
     dns:
       - 8.8.8.8
