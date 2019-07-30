@@ -1,0 +1,49 @@
+set alert youngfrankenstein@burningman.org
+set alert mike@burg.me
+
+set httpd port 9100 allow monit:donothing
+
+set mailserver email-smtp.us-west-2.amazonaws.com port 587 
+    username <SETME> password <SETME>
+    using TLSV1 with timeout 30 seconds
+
+
+set mail-format {
+      from: Playa Monit <do-not-rely@burningman.org>
+   subject: Monit: $SERVICE $EVENT at $DATE
+   message: Monit $ACTION $SERVICE at $DATE on $HOST: $DESCRIPTION.
+            Yours sincerely,
+            monit
+ }
+
+
+check system mail
+    if loadavg (5min) > 2.0 then alert
+    if memory usage > 85% then alert
+    if cpu usage (user) > 80% then alert
+
+check host docker-mysql address 127.0.0.1
+   if failed
+      port 8306
+      protocol mysql for 2 times within 2 cycles
+   then exec "/usr/local/bin/monit-sms"
+
+check host docker-postfix address 127.0.0.1
+   if failed
+      host localhost port 25
+      protocol smtp for 2 times within 2 cycles
+   then exec "/usr/local/bin/monit-sms"
+
+check host clubhouse-client address 127.0.0.1
+   if failed
+      port 80
+      protocol http
+      request "/client"
+   then exec "/usr/local/bin/monit-sms"
+
+check host clubhouse-api address 127.0.0.1
+   if failed
+      port 80
+      protocol http
+      request "/api/config"
+   then exec "/usr/local/bin/monit-sms"
