@@ -1,0 +1,8 @@
+#
+# Copy to /root/.twiliorc
+#
+
+ACCOUNTSID=<FILL ME>
+AUTHTOKEN=<FILL ME>
+
+CALLERID=+14158542548

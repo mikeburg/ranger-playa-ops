@@ -1,13 +1,31 @@
 #!/bin/bash
 
-# enter the phones numbers as ( "+18005551212" "+14155551212" )
-# e.g. phone=( "+18005551212" )   note the parens '()'
+phones=/root/.monit-phones
+config=/root/.twiliorc
+twilio=/usr/local/bin/twilio
 
-phones=( )
+while getopts "c:p:e:" opt; do
+	case "$opt" in
+		c) config=$OPTARG ;;
+		p) phones=$OPTARG ;;
+    e) twilio=$OPTARG ;;
+		*) echo "Unknown param: $opt"; exit ;;
+	esac
+done
 
-if [[ "${phones[@]}" == '' ]]; then
-  echo "No phones given"
-  exit 0
+if ! test -f ${phones}; then
+  echo "${phones} does not exist."
+  exit 1
 fi
 
-echo "$MONIT_SERVICE - $MONIT_EVENT @ $MONIT_DATE: $MONIT_DESCRIPTION" | /usr/local/bin/twilio-sms -c /root/.twiliorc ${phones[@]}
+if ! test -f ${config}; then
+  echo "${config} does not exist."
+  exit 1
+fi
+
+if ! test -f ${twilio}; then
+  echo "${twilio} does not exist."
+  exit 1
+fi
+
+echo "$MONIT_SERVICE - $MONIT_EVENT @ $MONIT_DATE: $MONIT_DESCRIPTION" | ${twilio} -c ${config} $(cat ${phones})

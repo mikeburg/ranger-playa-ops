@@ -63,7 +63,7 @@ services:
   # Web server load balancer/frontend
   nginx:
     build:
-      context: ./nginx
+      context: ./services/nginx
       dockerfile: Dockerfile
     image: nginx:prod
     deploy:
@@ -100,7 +100,7 @@ services:
   # SMTP Relay Server
   smtpd:
     build:
-      context: ./smtpd
+      context: ./services/smtpd
       dockerfile: Dockerfile
     image: smtpd:prod
     tty: true
