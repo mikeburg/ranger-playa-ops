@@ -6,6 +6,17 @@ Install the following packages:
 * Docker Compose version 1.24.0 or later
 * git
 
+Stop Postfix
+
+$ systemctl stop postfix
+$ systemctl disable postfix
+
+# Setup /root/.twiliorc
+# ACCOUNTSID, AUTHTOKEN, or CALLERID
+
+# install twilio-sms into /usr/local/bin
+# install monit-sms into /root
+
 To install git (as root):
 $ apt-get install git
 
@@ -13,11 +24,17 @@ To install certbot (as root):
 
 $ apt-get install certbot
 
+To install monit (as root):
+
+$ apt-get install monit
+
 To install Docker visit:
 https://docs.docker.com/install/linux/docker-ce/ubuntu/
 
 To install Docker Compose visit:
 https://docs.docker.com/compose/install/
+
+## Add certificates to monit
 
 # Add basic mailer
 

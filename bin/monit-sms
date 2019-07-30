@@ -1,0 +1,16 @@
+#!/bin/bash
+
+
+message=
+
+# enter the phones numbers as ( "+18005551212" "+14155551212" )
+# e.g. phone=( "+18005551212" )   note the parens '()'
+
+phones=( )
+
+if [[ "${phones[@]}" == '' ]]; then
+  echo "No phones given"
+  exit 0
+fi
+
+echo "$MONIT_SERVICE - $MONIT_EVENT @ $MONIT_DATE: $MONIT_DESCRIPTION" | /usr/local/bin/twilio-sms -c /root/.twiliorc ${phones[@]}
