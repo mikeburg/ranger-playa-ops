@@ -1,8 +1,5 @@
 #!/bin/bash
 
-
-message=
-
 # enter the phones numbers as ( "+18005551212" "+14155551212" )
 # e.g. phone=( "+18005551212" )   note the parens '()'
 
