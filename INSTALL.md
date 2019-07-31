@@ -215,6 +215,18 @@ $ bin/rangers-exec api.1 php artisan lambase:syncphotos
 
 This command may take several minutes to run.
 
+### Change the Twilio SMS end point.
+
+Log into Twilio and change to Sub Account 'Rangers'
+
+In the sidebar select Programmable SMS > SMS > Message Services > Ranger SMS
+
+Under inbound settings set "Request URL" to
+
+https://ranger-clubhouse.nv.burningman.org/api/sms/inbound
+
+
+
 ## One last thing before going live - test for mysql port exposure
 
 On another machine, NOT ON THE SERVER, check to see if the mysql port is exposed:
