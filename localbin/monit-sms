@@ -2,7 +2,7 @@
 
 phones=/root/.monit-phones
 config=/root/.twiliorc
-twilio=/usr/local/bin/twilio
+twilio=/usr/local/bin/twilio-sms
 
 while getopts "c:p:e:" opt; do
 	case "$opt" in
