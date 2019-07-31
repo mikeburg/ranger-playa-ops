@@ -1,124 +1,257 @@
-### Server Preparations for On Playa operations
+# Server Preparations for On Playa Ops
 
-Install the following packages:
-* certbot
-* Docker version 19.03.0 or later
-* Docker Compose version 1.24.0 or later
-* git
+### Create 'rangers' account
 
-Stop Postfix
+```sh
+# useradd -G sudo rangers
+# passwd rangers
+```
 
-$ systemctl stop postfix
-$ systemctl disable postfix
+Remember the password and pass it on to the other Tech Ops team members.
 
-# Setup /root/.twiliorc
-# ACCOUNTSID, AUTHTOKEN, or CALLERID
+The scripts will assume rangers home directory is '/home/rangers'
 
-# install twilio-sms into /usr/local/bin
-# install monit-sms into /root
+### Adjust the existing Ubuntu 18 (Bionic) configuration
 
-To install git (as root):
-$ apt-get install git
+1. As root, stop and disable postfix
+```sh
+# systemctl stop postfix
+# systemctl disable postfix
+```
 
-To install certbot (as root):
+2. Still as root, remove the default Docker install. Ubuntu does not install the latest version.
 
-$ apt-get install certbot
+```sh
+# apt-get purge nginx nginx-common
+# snap remove docker
+# rm -R /var/lib/docker
+```
 
-To install monit (as root):
+### Configure and enable the firewall
 
-$ apt-get install monit
+The only allowed incoming traffic into the server should be: ssh, http & https, the monit web server.
 
-To install Docker visit:
+```sh
+# ufw default deny incoming
+# ufw default allow outgoing
+# ufw add 22/tcp
+# ufw add 80/tcp
+# ufw add 443/tcp
+# ufw add 9100/tcp
+# ufw enable
+```
+
+### Install packages via apt get
+
+```sh
+# apt install certbot
+# apt install git
+# apt install monit
+# apt-get install mailutils
+# apt install lm-sensors
+```
+
+Run `sensors-detect` after installing lm-sensors. Answer YES to probe all possible sensor chips.
+
+### Install the latest version of Docker
+
+[Docker version 19.03.0 or later
 https://docs.docker.com/install/linux/docker-ce/ubuntu/
 
-To install Docker Compose visit:
+Docker Compose version 1.24.0 or later
 https://docs.docker.com/compose/install/
 
-## Add certificates to monit
+After Docker is installed, initialize a Docker swarm
 
-# Add basic mailer
+```sh
+$ docker swarm init
+```
 
-$ apt-get install mailutils
+### Set Docker to honor the existing iptables configuration
 
-## Container names
+Create the /etc/docker/daemon.json  file and add the following json to it:
+```json
+{
+  "iptables": false
+}
+```
 
-| Name    | Description                        | Built from           |
-|---------|------------------------------------|----------------------|
-| api     | Clubhouse 2 API backend            | ./src/api            |
-| client  | Clubhouse 2  web client            | ./src/client         |
-| classic | Clubhouse 1                        | ./src/classic        |
-| smtpd   | Postfix SMTP relay                 | ./smtpd + docker hub |
-| nginx   | Nginx frontend                     | ./nginx + docker hub |
-| db      | Mysql 5.6                          | docker hub mysql:5.6 |
+(Older Docker  versions appear  use DOCKER_OPTS in /etc/default/docker with the "--iptables=false" argument. Newer versions use daemon.json.)
 
-## 1 - Pull down the Clubhouse repositories (classic, api backend, client)
-$ bin/install
+*The safest thing at this point is to reboot the machine to ensure Docker and ufw/iptables play nicely with one another.*
 
-## 2 - Create a secrets.yml file
+### Log into the 'rangers' account and install the playa repo, scripts, and config files
 
-Copy the template from secrets-example.yml:
+1. Pull down the playa ops repo (this repo you're reading now!):
 
-$ cp secrets-example.yml secrets.yml
+```sh
+$ git clone https://github.com/burningmantech/rangers-playa-ops
+```
 
-Use your favorite editor to enter the authentication information.
+2. Run the install script which will pull down the Clubhouse repositories, and setup the data directory for use by the Docker services.
 
-You will need to obtain or decide on the following pieces:
+```sh
+$ cd rangers-playa-ops
+$ sh ./bin/install
+```
 
-* Mysql database password for the "rangers" user - THIS CANNOT BE CHANGED ONCE MYSQL HAS INITIALIZED THE DATABASE.
-When mysql is launched for the very first time, the the "rangers" database is created with the username and password specified. The database will be empty and devoid of any schema.
+NOTE: You will be asked for a github username and password in order to pull down the Clubhouse 1 repository.
 
-* The JWT secret. Either copy the value from the AWS task environment.
+2. As root, install all scripts in ./localbin into /usr/local/bin.
 
-* The AWS SES hostname along with the SES username and password. (Not the same as your AWS credentials)
+```sh
+# cp ./localbin/* /usr/local/bin/
+```
 
+3. Still as root, install the twilio-sms command config file and edit.
 
-## 3 - Build the Docker images
-$ bin/build
+```sh
+# cp configs/twiliorc-example /root/.twiliorc
+```
 
-## 4 - Obtain the HTTPS certificates
+4. Still as root, create /root/.monit-phones, and add all phones numbers wishing to receive monit alerts. One phone number per line in E.164 format - e.g. +14155551212 (plus sign, followed by country code, no spaces or parens)
+
+5. Still as root, copy the rangers monit file, and edit the AWS SES/SMTP credentials. Add any additional email addresses to receive monit alerts.
+
+```sh
+# cp configs/monit-rangers /etc/monit/conf.d/rangers
+```
+
+5. As rangers, add the id_rsa.pub file for rangers@burg.me (or whatever remote host is being used - make sure rangers-playa-ops/bin/clubhouse-backup is changed accordingly) to /home/rangers/.ssh/authorized_keys
+
+6. As rangers, edit the cron file to run the Clubhouse backup on a hourly basis.
+
+```cron
+25  * * * * ./bin/rangers-playa-ops/bin/clubhouse-backup full
+```
+
+### Start (restart) Monit
+
+As root, stop and then start monit to pick up the ranger configuration.
+```sh
+# systemctl stop monit
+(wait 15 seconds or so)
+# systemctl start monit
+```
+
+You may receive several Monit alerts saying the Clubhouse services are down. That's okay, nothing is running yet.
+
+### Obtain the HTTPS certificates
 
 The docker stack should be stopped, and no other web services running on port 80s & 443. The ports should be reachable from the Internet.
 
-To obtain a certificate for the Clubhouse ranger-clubhouse.nv.burningman.org):
-(running in the top level directory where this file you are reading now is located)
+As rangers, and in the ranger-playa-ops directory run certbot:
 
+```sh
 $ certbot certonly --config-dir ./data/certs --standalone -d ranger-clubhouse.nv.burningman.org
-
-To obtain a certificate for the IMS ranger-ims.nv.burningman.org:
-
 $ certbot certonly --config-dir ./data/certs --standalone -d ranger-ims.nv.burningman.org
+```
 
-## Stop the AWS instances
+### Setup, Build, And Start the Docker Clubhouse stack.
 
-See the AWS document on how to stop the AWS instances. The task counts should go to zero.
+1. As rangers in the rangers-playa-ops directory, copy ./configs/rangers.env to ./rangers.env
 
+2. Edit ./.rangers.env and set the AWS SES credentials, and JWT  token. The JWT token can set using the Fargate production value, or have a Tech Ninja generate a new one using the `php artisan jwt:secret` command in working API deployment.
 
-## Load the database
+3. Build the stack!
 
-1. Obtain a production database dump from blaster. Make sure the API Fargate instances have been stopped so the database updates are not happening while the dump is running.
+```sh
+$ ./bin/rangers-build-all
+```
 
-2. Copy said dump down to the local machine.
+4. Launch the stack! The mysql service may take upwards to a minute the first time it is launched.
 
-3. Launch the stack
-$ bin/start
+```sh
+$ ./bin/rangers-start
+```
 
-4. Use ```docker ps``` to check if the database instance has started. It may take a 1 or 2 minutes to fully boot since mysql will have to initialize an empty database when running for the first time. THE DATABASE PASSWORDS WILL BE SET AND CANNOT BE CHANGED FROM THIS POINT FORWARD.
+5. After waiting a minute or so, verify the stack is running by visiting ranger-clubhouse.nv.burningman.org. The login page should appear but you will not be able to log in.
 
-5. Verify mysql  is running:
+6. Test AWS SES credentials.
 
-$ ./bin/mysql-rangers
-You will be prompted for a password. Use the rangers password in secrets.yml
+```sh
+./bin/rangers-exec api.1 php artisan test:mail <youremail@domain.blah>
+```
 
-7. Load the production dump into the local database:
+You should receive an email message. Check the smtp logs if the message does not appear:
 
-$ ./bin/mysql-rangers < NAME-OF-DUMP-FILE.sql
+```sh
+./bin/rangers-log smtpd
+```
 
-8. The database should be loaded up and the stack good to go.
+At this point, monit may send out a few emails saying the services were succesfully connected to. This is a good thing(tm).
 
-## Test for mysql port exposure
+### Transfer the Clubhouse database
 
-On another machine:
+1. Log into AWS and stop ALL production client & api instances. Wait until all instances have been stopped. (TBD: set instance count to zero maybe?)
+
+2. On blaster, dump the production database. Suggested naming is rangers-YYYY-MM-DD.sql. Compress with gzip.
+
+3. Copy the database down to the server into the rangers account.
+
+4. Change directories to rangers-playa-ops.
+
+5. Load up the database (Docker stack must be running at this point):
+
+```sh
+gunzip < /path/to/dump | ./bin/rangers-mysql
+```
+
+The mysql password will be required.
+
+6. Verify the load was correct by trying to log into ranger-clubhouse.nv.burningman.org
+
+### Rebuild the Photo Status cache, and download images.
+
+1. Log in to the on playa Clubhouse with an Admin account.
+
+2. Change the PhotoStoreLocally setting to true.
+
+3. Go back to the server terminal, and as rangers in the rangers-playa-ops directory, rebuild the photo cache and download the images:
+
+```sh
+$ bin/rangers-exec api.1 php artisan lambase:syncphotos
+```
+
+This command may take several minutes to run.
+
+## One last thing before going live - test for mysql port exposure
+
+On another machine, NOT ON THE SERVER, check to see if the mysql port is exposed:
 
 $ telnet ranger-clubhouse.nv.burningman.org 3306
 
 Telnet should NOT be able to connect. If it does, check the iptable entries on the server.
+
+### Redirect all AWS Clubhouse traffic to the Playa server
+
+Once the database is loaded, redirect all AWS Clubhouse traffic to the playa.
+
+TBD: Set the AWS load balancer to redirect to ranger-clubhouse.nv.burningman.org?
+
+### Congrats, the On Playa Clubhouse is running!
+
+Feel the Ranger love..
+
+### Summary of files which require credentials
+
+| File                            | Credentials needed                 |
+------------------------------------------------------------------------
+| ./ranger-playa-ops/.rangers.env | AWS SES, JWT Token                 |
+| ./.ssh/known_keys               | id_pub.rsa of remote backup host   |
+| /root/.twiliorc                 | Twilio Account SID and Auth Token  |
+| /root/.monit-phones             | Phone numbers to text monit alerts |
+| /etc/monit/conf.d/rangers       | AWS SES Credentials                |
+------------------------------------------------------------------------
+
+### Container names
+
+| Name    | Description               | Built from                     |
+|---------|---------------------------|--------------------------------|
+| api     | Clubhouse 2 API backend   | ./src/api                      |
+| client  | Clubhouse 2  web client   | ./src/client                   |
+| classic | Clubhouse 1               | ./src/classic                  |
+| smtpd   | Postfix SMTP relay        | ./services/smtpd + docker hub  |
+| nginx   | Nginx frontend            | ./serviices/nginx + docker hub |
+| db      | Mysql 5.6                 | docker hub mysql:5.6           |
+------------------------------------------------------------------------
