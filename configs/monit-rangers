@@ -1,49 +1,70 @@
-set alert youngfrankenstein@burningman.org
-set alert mike@burg.me
+#
+# Install into /etc/monit/conf.d/rangers
+# chown root /etc/monit/conf.d/rangers; chmod 700 /etc/monit/conf.d/rangers
+#
+#
 
-set httpd port 9100 allow monit:donothing
+set alert youngfrankenstein@burningman.org
+
+set httpd port 9100 allow monit:monit
 
 set mailserver email-smtp.us-west-2.amazonaws.com port 587 
-    username <SETME> password <SETME>
+    username FILLME password FILLME
     using TLSV1 with timeout 30 seconds
 
+set limits { networkTimeout: 15 seconds }
 
 set mail-format {
       from: Playa Monit <do-not-rely@burningman.org>
    subject: Monit: $SERVICE $EVENT at $DATE
-   message: Monit $ACTION $SERVICE at $DATE on $HOST: $DESCRIPTION.
-            Yours sincerely,
+   message: $EVENT
+            Service $SERVICE
+            Action: $ACTION
+            Description; $DESCRIPTION
+            Date: $DATE
+
+            Your faithful monitoring bot,
             monit
  }
 
 
-check system mail
+check system server
     if loadavg (5min) > 2.0 then alert
     if memory usage > 85% then alert
     if cpu usage (user) > 80% then alert
 
-check host docker-mysql address 127.0.0.1
+check program cputemp with path "/usr/local/bin/monit-cputemp"
+   if status > 80 then exec "/usr/local/bin/monit-sms"
+
+check host clubhouse-mysql address 127.0.0.1
    if failed
       port 8306
       protocol mysql for 2 times within 2 cycles
    then exec "/usr/local/bin/monit-sms"
 
-check host docker-postfix address 127.0.0.1
+check host clubhouse-smtp address 127.0.0.1
    if failed
-      host localhost port 25
+      host localhost port 8025
       protocol smtp for 2 times within 2 cycles
    then exec "/usr/local/bin/monit-sms"
 
 check host clubhouse-client address 127.0.0.1
    if failed
-      port 80
+      port 8100
       protocol http
       request "/client"
    then exec "/usr/local/bin/monit-sms"
 
 check host clubhouse-api address 127.0.0.1
    if failed
-      port 80
+      port 8200
       protocol http
       request "/api/config"
+   then exec "/usr/local/bin/monit-sms"
+
+check host clubhouse-classic address 127.0.0.1
+   if failed
+      port 8300
+      protocol http
+      request "/clubhouse/?healthcheck=1"
    then exec "/usr/local/bin/monit-sms"
