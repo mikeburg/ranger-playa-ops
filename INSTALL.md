@@ -181,7 +181,13 @@ You should receive an email message. Check the smtp logs if the message does not
 
 At this point, monit may send out a few emails saying the services were succesfully connected to. This is a good thing(tm).
 
-### Transfer the Clubhouse database
+### Warn on Control-1 / Ranger HQ the Clubhouse will be shutdown in 15 mins and transferred locally.
+
+Give a 15 min, 5 min, and 1 minute warning. At the zero mark, announce the Clubhouse will be down for about a hour.
+
+During the 15 minute countdown, go take a break. Think happy thoughts. The fun is about to start.
+
+### Shutdown the AWS Clubhouse, and transfer the database
 
 1. Log into AWS and stop ALL production client & api instances. Wait until all instances have been stopped. (TBD: set instance count to zero maybe?)
 
@@ -197,23 +203,23 @@ At this point, monit may send out a few emails saying the services were succesfu
 gunzip < /path/to/dump | ./bin/rangers-mysql
 ```
 
-The mysql password will be required.
+The local mysql password will be required.
 
 6. Verify the load was correct by trying to log into ranger-clubhouse.nv.burningman.org
 
-### Rebuild the Photo Status cache, and download images.
+### Rebuild the Photo Status cache, and download mugshots.
 
 1. Log in to the on playa Clubhouse with an Admin account.
 
 2. Change the PhotoStoreLocally setting to true.
 
-3. Go back to the server terminal, and as rangers in the rangers-playa-ops directory, rebuild the photo cache and download the images:
+3. Go back to the server terminal, and as the rangers account in the rangers-playa-ops directory, rebuild the photo cache and download the images:
 
 ```sh
-$ bin/rangers-exec api.1 php artisan lambase:syncphotos
+$ ./bin/rangers-exec api.1 php artisan lambase:syncphotos
 ```
 
-This command may take several minutes to run.
+This command may take several minutes to run depending on how congested the playa Internet link is.
 
 ### Change the Twilio SMS end point.
 
