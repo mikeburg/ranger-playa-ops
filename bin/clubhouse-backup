@@ -5,10 +5,10 @@ ops_dir="$(cd "$(dirname "$0")/.." && pwd)";
 ops_bin=${ops_dir}/bin
 backup_dir=${ops_dir}/data/backups
 timestamp=$(date +'%Y-%m-%d-%H-%M')
-clubhouse_tmp=$(mktemp /tmp/backup.XXXXXX.sql)
+clubhouse_tmp=$(mktemp /tmp/rangers-backup.XXXXXX.sql)
 
 function finish {
-  rm -f ${clubhouse_tmp}
+  rm -f "${clubhouse_tmp}"
 }
 
 trap finish EXIT INT QUIT
@@ -22,10 +22,10 @@ options=""
 
 if [ "$1" == "full" ]; then
     echo "** Full Clubhouse backup"
-    backup="${backup_dir}/${timestamp}-clubhouse-full.sql.gz"
+    backup="${backup_dir}/rangers-${timestamp}-full.sql.gz"
 else
     echo "** Partial Clubhouse backup (ignoring log table)"
-    backup="${backup_dir}/${timestamp}-clubhouse-partial.sql.gz"
+    backup="${backup_dir}/rangers-${timestamp}-partial.sql.gz"
     options="--ignore-table=rangers.log"
 fi
 
