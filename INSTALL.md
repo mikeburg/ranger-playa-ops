@@ -1,9 +1,13 @@
 # Server Preparations for On Playa Ops
 
+### Set the server IP address
+
+TBD: Talk with BMIT and find out what the IP address, router, and other bits are.
+
 ### Create 'rangers' account
 
 ```sh
-# useradd -G sudo rangers
+# useradd -m -G sudo -G docker rangers
 # passwd rangers
 ```
 
@@ -38,6 +42,7 @@ The only allowed incoming traffic into the server should be: ssh, http & https, 
 # ufw add 80/tcp
 # ufw add 443/tcp
 # ufw add 9100/tcp
+# ufw logging off
 # ufw enable
 ```
 
@@ -61,37 +66,18 @@ https://docs.docker.com/install/linux/docker-ce/ubuntu/
 Docker Compose version 1.24.0 or later
 https://docs.docker.com/compose/install/
 
-After Docker is installed, initialize a Docker swarm
-
-```sh
-$ docker swarm init
-```
-
-### Set Docker to honor the existing iptables configuration
-
-Create the /etc/docker/daemon.json  file and add the following json to it:
-```json
-{
-  "iptables": false
-}
-```
-
-(Older Docker  versions appear  use DOCKER_OPTS in /etc/default/docker with the "--iptables=false" argument. Newer versions use daemon.json.)
-
-*The safest thing at this point is to reboot the machine to ensure Docker and ufw/iptables play nicely with one another.*
-
 ### Log into the 'rangers' account and install the playa repo, scripts, and config files
 
 1. Pull down the playa ops repo (this repo you're reading now!):
 
 ```sh
-$ git clone https://github.com/burningmantech/rangers-playa-ops
+$ git clone https://github.com/burningmantech/ranger-playa-ops.git
 ```
 
 2. Run the install script which will pull down the Clubhouse repositories, and setup the data directory for use by the Docker services.
 
 ```sh
-$ cd rangers-playa-ops
+$ cd ranger-playa-ops
 $ sh ./bin/install
 ```
 
@@ -117,12 +103,21 @@ NOTE: You will be asked for a github username and password in order to pull down
 # cp configs/monit-rangers /etc/monit/conf.d/rangers
 ```
 
-5. As rangers, add the id_rsa.pub file for rangers@burg.me (or whatever remote host is being used - make sure rangers-playa-ops/bin/clubhouse-backup is changed accordingly) to /home/rangers/.ssh/authorized_keys
+5. Generate a ~/.ssh/id_rsa.pub file and copyto rangers@burg.me:.ssh/authorized_keys
+
+```sh
+$ ssh-keygen -o
+```
+(hit enter when prompted for the passphrase.)
+
+Log into rangers@burg.me and append the contents of ~rangers/.ssh/id_rsa.pub to rangers@burg.me:.ssh/authorized_keys.
+
+The backup script will use this for off site backups.
 
 6. As rangers, edit the cron file to run the Clubhouse backup on a hourly basis.
 
 ```cron
-25  * * * * ./bin/rangers-playa-ops/bin/clubhouse-backup full
+25  * * * * ./bin/ranger-playa-ops/bin/clubhouse-backup full
 ```
 
 ### Start (restart) Monit
@@ -149,7 +144,7 @@ $ certbot certonly --config-dir ./data/certs --standalone -d ranger-ims.nv.burni
 
 ### Setup, Build, And Start the Docker Clubhouse stack.
 
-1. As rangers in the rangers-playa-ops directory, copy ./configs/rangers.env to ./rangers.env
+1. As rangers in the ranger-playa-ops directory, copy ./configs/rangers.env to ./rangers.env
 
 2. Edit ./.rangers.env and set the AWS SES credentials, and JWT  token. The JWT token can set using the Fargate production value, or have a Tech Ninja generate a new one using the `php artisan jwt:secret` command in working API deployment.
 
@@ -219,7 +214,7 @@ During the 15 minute countdown, go take a break. Think happy thoughts. The fun i
 
 3. Copy the database down to the server into the rangers account.
 
-4. Change directories to rangers-playa-ops.
+4. Change directories to ranger-playa-ops.
 
 5. Load up the database (Docker stack must be running at this point):
 
@@ -237,7 +232,7 @@ The local mysql password will be required.
 
 2. Change the PhotoStoreLocally setting to true.
 
-3. Go back to the server terminal, and as the rangers account in the rangers-playa-ops directory, rebuild the photo cache and download the images:
+3. Go back to the server terminal, and as the rangers account in the ranger-playa-ops directory, rebuild the photo cache and download the images:
 
 ```sh
 $ ./bin/rangers-exec api.1 php artisan lambase:syncphotos
@@ -280,7 +275,7 @@ Feel the Ranger love..
 | File                                   | Credentials needed                        |
 --------------------------------------------------------------------------------------
 | ~rangers/ranger-playa-ops/.rangers.env | AWS SES, JWT Token                        |
-| ~rangers/.ssh/known_keys               | id_pub.rsa for remote backup host         |
+| rangers@burg.me:.ssh/authorized_keys   | id_pub.rsa for the server                 |
 | /root/.twiliorc                        | Twilio Account SID and Auth Token         |
 | /root/.monit-phones                    | Phone numbers to text monit alerts        |
 | /etc/monit/conf.d/rangers              | AWS SES Credentials, Tech Ops email addrs.|

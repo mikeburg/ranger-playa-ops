@@ -6,4 +6,4 @@ if [[ $# -eq 0 ]] ; then
   exit 1;
 fi
 
-exec docker service logs -f --raw "rangers_$@"
+exec docker logs -f "rangers_$@_1"

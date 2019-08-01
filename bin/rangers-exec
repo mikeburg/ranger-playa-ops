@@ -9,23 +9,8 @@ if [[ $# -eq 0 ]]; then
 fi
 
 name=$1
-
 shift
 
-if [[ "${name}" == api* ]]; then
-  service="rangers_api"
-  name="rangers_${name}"
-else
-  service="rangers_${name}"
-  name="${service}.1"
-fi
+service="rangers_${name}_1"
 
-
-service_id=$(docker service ps -f "name=${name}" ${service} -q --no-trunc | head -n1)
-
-if [[ "${service_id}" == "" ]]; then
-  echo "Cannot locate service id for ${service}. Does not appear to be running."
-  exit 1
-fi
-
-docker exec --env="${workingdir}/.rangers.env" -it "${name}.${service_id}" "$@"
+exec docker exec --env="${workingdir}/.rangers.env" -it ${service} "$@"
