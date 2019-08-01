@@ -1,5 +1,5 @@
 #!/bin/sh
 
-echo "** Stopping stack"
+echo "** Stopping services"
 
-docker stack rm rangers
+docker-compose -f docker-compose.yml -p rangers down
