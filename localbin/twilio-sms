@@ -59,15 +59,15 @@ fi
 if [ -n "$ACCOUNTSID_ARG" ]; then ACCOUNTSID=$ACCOUNTSID_ARG; fi
 if [ -n "$AUTHTOKEN_ARG" ]; then AUTHTOKEN=$AUTHTOKEN_ARG; fi
 if [ -n "$CALLERID_ARG" ]; then CALLERID=$CALLERID_ARG; fi
-	
+
 # verify params
 if [ -z "$ACCOUNTSID" ]; then usage "AccountSid not set, it must be provided in the config file, or on the command line."; fi;
 if [ -z "$AUTHTOKEN" ]; then usage "AuthToken not set, it must be provided in the config file, or on the command line."; fi;
 if [ -z "$CALLERID" ]; then usage "CallerID not set, it must be provided in the config file, or on the command line."; fi;
 
-# Get message from stdin, taking only first 160 chars
+# Get message from stdin, taking only first 140 chars
 MSG=`cat`
-MSG=${MSG:0:160}
+MSG=${MSG:0:140}
 
 # Verify MSG
 if [ -z "$MSG" ]; then usage "No content for the SMS was read from STDIN."; fi;
@@ -82,4 +82,3 @@ for PHONE in "${@:$OPTIND}"; do
 	fi
 	if [ "$VERBOSE" -eq 1 ]; then echo $RESPONSE; fi
 done
-

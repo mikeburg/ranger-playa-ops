@@ -163,9 +163,33 @@ $ ./bin/rangers-build-all
 
 ```sh
 $ ./bin/rangers-start
+** Deploying Ranger stack (may receive warning about 'Ignoring unsupported options' -- safe to disregard)
+Ignoring unsupported options: build
+
+Creating network rangers_default
+Creating service rangers_client
+Creating service rangers_classic
+Creating service rangers_nginx
+Creating service rangers_db
+Creating service rangers_smtpd
+Creating service rangers_api
 ```
 
-5. After waiting a minute or so, verify the stack is running by visiting ranger-clubhouse.nv.burningman.org. The login page should appear but you will not be able to log in.
+Use `docker stack ps rangers` to verify the stack is running:
+
+```
+$ docker stack ps rangers
+ID            NAME               IMAGE           NODE             DESIRED STATE  CURRENT STATE            ERROR         PORTS
+sbag9v1bh377 rangers_nginx.1     nginx:prod      man_side_ranger  Running        Running 16 seconds ago
+ssv2qvjbmaae rangers_api.1       apiserver:prod  man_side_ranger  Running        Running 25 seconds ago
+khupgancf0or rangers_smtpd.1     smtpd:prod      man_side_ranger  Running        Running 27 seconds ago
+xtk6reoez7ju rangers_db.1        mysql:5.6       man_side_ranger  Running        Running 29 seconds ago
+rxa4vuabthkn rangers_classic.1   classic:prod    man_side_ranger  Running        Running 31 seconds ago
+kanr98oje1jb rangers_client.1    client:prod     man_side_ranger  Running        Running 31 seconds ago
+w1f6dwbdtg8k rangers_api.2       apiserver:prod  man_side_ranger  Running        Running 24 seconds ago
+```
+
+5. After waiting a minute or so, open a web browser and visit ranger-clubhouse.nv.burningman.org. The login page should appear but you will not be able to log in due to the database not being loaded.
 
 6. Test AWS SES credentials.
 
@@ -179,7 +203,7 @@ You should receive an email message. Check the smtp logs if the message does not
 ./bin/rangers-log smtpd
 ```
 
-At this point, monit may send out a few emails saying the services were succesfully connected to. This is a good thing(tm).
+At this point, monit may send out a few emails saying the services were successfully connected to. This is a good thing(tm).
 
 ### Warn on Control-1 / Ranger HQ the Clubhouse will be shutdown in 15 mins and transferred locally.
 
@@ -253,14 +277,14 @@ Feel the Ranger love..
 
 ### Summary of files which require credentials
 
-| File                            | Credentials needed                 |
-------------------------------------------------------------------------
-| ./ranger-playa-ops/.rangers.env | AWS SES, JWT Token                 |
-| ./.ssh/known_keys               | id_pub.rsa of remote backup host   |
-| /root/.twiliorc                 | Twilio Account SID and Auth Token  |
-| /root/.monit-phones             | Phone numbers to text monit alerts |
-| /etc/monit/conf.d/rangers       | AWS SES Credentials                |
-------------------------------------------------------------------------
+| File                                   | Credentials needed                        |
+--------------------------------------------------------------------------------------
+| ~rangers/ranger-playa-ops/.rangers.env | AWS SES, JWT Token                        |
+| ~rangers/.ssh/known_keys               | id_pub.rsa for remote backup host         |
+| /root/.twiliorc                        | Twilio Account SID and Auth Token         |
+| /root/.monit-phones                    | Phone numbers to text monit alerts        |
+| /etc/monit/conf.d/rangers              | AWS SES Credentials, Tech Ops email addrs.|
+--------------------------------------------------------------------------------------
 
 ### Container names
 
