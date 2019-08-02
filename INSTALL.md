@@ -4,28 +4,11 @@
 
 TBD: Talk with BMIT and find out what the IP address, router, and other bits are.
 
-### Create 'rangers' account
-
-```sh
-# useradd -m -G sudo -G docker rangers
-# passwd rangers
-```
-
-Remember the password and pass it on to the other Tech Ops team members.
-
-The scripts will assume rangers home directory is '/home/rangers'
-
 ### Adjust the existing Ubuntu 18 (Bionic) configuration
 
-1. As root, stop and disable postfix
+1. As root, remove postfix, remove nginx, and uninstall Docker.
 ```sh
-# systemctl stop postfix
-# systemctl disable postfix
-```
-
-2. Still as root, remove the default Docker install. Ubuntu does not install the latest version.
-
-```sh
+# apt-get purge postfix
 # apt-get purge nginx nginx-common
 # snap remove docker
 # rm -R /var/lib/docker
@@ -38,10 +21,10 @@ The only allowed incoming traffic into the server should be: ssh, http & https, 
 ```sh
 # ufw default deny incoming
 # ufw default allow outgoing
-# ufw add 22/tcp
-# ufw add 80/tcp
-# ufw add 443/tcp
-# ufw add 9100/tcp
+# ufw allow 22/tcp
+# ufw allow 80/tcp
+# ufw allow 443/tcp
+# ufw allow 9100/tcp
 # ufw logging off
 # ufw enable
 ```
@@ -52,11 +35,13 @@ The only allowed incoming traffic into the server should be: ssh, http & https, 
 # apt install certbot
 # apt install git
 # apt install monit
-# apt-get install mailutils
 # apt install lm-sensors
 ```
 
-Run `sensors-detect` after installing lm-sensors. Answer YES to probe all possible sensor chips.
+```sh
+# apt install mailutils
+```
+Select 'No Configuration' when prompted.
 
 ### Install the latest version of Docker
 
@@ -65,6 +50,18 @@ https://docs.docker.com/install/linux/docker-ce/ubuntu/
 
 Docker Compose version 1.24.0 or later
 https://docs.docker.com/compose/install/
+
+### Create 'rangers' account
+
+```sh
+# useradd -m -G sudo,docker rangers
+# passwd rangers
+```
+
+Remember the password and pass it on to the other Tech Ops team members.
+
+The scripts will assume rangers home directory is '/home/rangers'
+
 
 ### Log into the 'rangers' account and install the playa repo, scripts, and config files
 
@@ -119,6 +116,13 @@ The backup script will use this for off site backups.
 ```cron
 25  * * * * ./bin/ranger-playa-ops/bin/clubhouse-backup full
 ```
+
+7. Check ssh credentials were copied over to authorized_keys correctly by ssh into the remote backup account.
+
+```sh
+$ ssh rangers@burg.me
+```
+
 
 ### Start (restart) Monit
 

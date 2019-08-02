@@ -14,9 +14,10 @@ services:
     env_file: .rangers.env
     tty: true
     ports:
-      - mode: host
-        target: 80
-        published: 8200
+      - "127.0.0.1:8200:80"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     volumes:
       - ./data/mugshots:/var/www/application/storage/mugshots
     depends_on:
@@ -48,6 +49,9 @@ services:
     tty: true
     ports:
       - "127.0.0.1:8300:80"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     depends_on:
       - db
 
@@ -62,6 +66,9 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     volumes:
       - ./data/certs:/etc/nginx/certs
       - ./data/mugshots:/mugshots
