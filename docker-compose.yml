@@ -87,6 +87,17 @@ services:
     volumes:
       - ./data/mysql:/var/lib/mysql
 
+  #MySQL Service
+  radiodb:
+    image: mysql:5.6
+    env_file: .radiodb.env
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "127.0.0.1:58306:3006"
+    volumes:
+      - ./data/mysql-radio:/var/lib/mysql
+
   # SMTP Relay Server
   smtpd:
     build:
