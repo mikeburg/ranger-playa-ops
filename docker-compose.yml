@@ -37,6 +37,24 @@ services:
     dns:
       - 8.8.8.8
       - 8.8.4.4
+ 
+  # Clubhouse 2 frontend
+  ims:
+    build:
+      context: ./src/ranger-ims-server
+      dockerfile: Dockerfile
+    env_file: .rangers.env
+    image: ims:prod
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "127.0.0.1:8400:80"
+    volumes:
+      - ./data/ims:/external
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+
 
   # Classic Clubhouse
   classic:
@@ -83,18 +101,18 @@ services:
     restart: unless-stopped
     tty: true
     ports:
-      - "127.0.0.1:8306:3006"
+      - "127.0.0.1:8306:3306"
     volumes:
       - ./data/mysql:/var/lib/mysql
 
-  #MySQL Service
+  #Radio  logger
   radiodb:
     image: mysql:5.6
     env_file: .radiodb.env
     restart: unless-stopped
     tty: true
     ports:
-      - "127.0.0.1:58306:3006"
+      - "9306:3306"
     volumes:
       - ./data/mysql-radio:/var/lib/mysql
 

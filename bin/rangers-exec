@@ -13,4 +13,11 @@ shift
 
 service="rangers_${name}_1"
 
-exec docker exec --env="${workingdir}/.rangers.env" -it ${service} "$@"
+if [ -t 0 ]; then
+	tty_args="--tty";
+else
+	tty_args="";
+fi
+
+
+exec docker exec --interactive ${tty_args} --env="${workingdir}/.rangers.env"  "${service}" "$@"

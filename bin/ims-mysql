@@ -1,0 +1,3 @@
+#!/bin/sh
+
+"$(dirname "$0")/rangers-exec" db mysql -u rangers --password=donothing ims;
