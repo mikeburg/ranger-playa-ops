@@ -6,12 +6,19 @@ ops_bin=${ops_dir}/bin
 backup_dir=${ops_dir}/data/backups
 timestamp=$(date +'%Y-%m-%d-%H-%M')
 clubhouse_tmp=$(mktemp /tmp/rangers-backup.XXXXXX.sql)
+clubhouse_backup="${backup_dir}/rangers-${timestamp}.sql.gz"
+
+ims_tmp=$(mktemp /tmp/ims-backup.XXXXXX.sql)
+ims_backup="${backup_dir}/ims-${timestamp}.sql.gz"
+
+ims_log_backup="${backup_dir}/ims-log-${timestamp}.gz"
 
 remote_account="rangers@burg.me"
 remote_dir="backups"
 
 function finish {
-  rm -f ${clubhouse_tmp}
+  rm -f "${clubhouse_tmp}"
+  rm -f "${ims_tmp}"
 }
 
 trap finish EXIT INT QUIT
@@ -21,24 +28,24 @@ SECONDS=0
 
 mkdir -p ${backup_dir}
 
-options=""
-
-if [ "$1" == "full" ]; then
-    echo "** Full Clubhouse backup"
-    backup="${backup_dir}/rangers-${timestamp}-full.sql.gz"
-else
-    echo "** Partial Clubhouse backup (ignoring log table)"
-    backup="${backup_dir}/rangers-${timestamp}-partial.sql.gz"
-    options="--ignore-table=rangers.log"
-fi
-
-echo "** Backing up to ${backup}"
-${ops_bin}/rangers-exec db /bin/bash -c "/usr/bin/mysqldump ${options} -u rangers --password=\"\${MYSQL_PASSWORD}\" rangers" > ${clubhouse_tmp}
+echo "** Backing up to ${clubhouse_backup}"
+${ops_bin}/rangers-exec db /bin/bash -c "/usr/bin/mysqldump --ignore-table=rangers.log -u rangers --password=\"\${MYSQL_PASSWORD}\" rangers" > ${clubhouse_tmp}
 echo "** Compressing"
-gzip < ${clubhouse_tmp} > ${backup}
+gzip < ${clubhouse_tmp} > ${clubhouse_backup}
+echo "*** transfering clubhouse"
+scp ${clubhouse_backup} ${remote_account}:${remote_dir}
 
-echo "*** attempting to copy"
-scp ${backup} ${remote_account}:${remote_dir}
+echo "** Backing up to ${ims_backup}"
+${ops_bin}/rangers-exec db /bin/bash -c "/usr/bin/mysqldump -u rangers --password=\"\${MYSQL_PASSWORD}\" ims" > ${ims_tmp}
+echo "** Compressing"
+gzip < ${ims_tmp} > ${ims_backup}
+echo "*** transfering ims"
+scp ${ims_backup} ${remote_account}:${remote_dir}
+
+echo "** Backing up to ${ims_log_backup}"
+gzip < "${ops_dir}/data/ims/ims_server.log" > "${ims_log_backup}"
+echo "*** transfering ims"
+scp "${ims_log_backup}" "${remote_account}:${remote_dir}"
 
 echo "*** Finished in ${SECONDS} seconds."
 
