@@ -9,7 +9,7 @@ clubhouse_tmp=$(mktemp /tmp/rangers-backup.XXXXXX.sql)
 clubhouse_backup="${backup_dir}/rangers-${timestamp}.sql.gz"
 
 ims_tmp=$(mktemp /tmp/ims-backup.XXXXXX.sql)
-ims_backup="${backup_dir}/ims-${timestamp}.sql.gz"
+ims_backup="${backup_dir}/ims-db-${timestamp}.sql.gz"
 
 ims_log_backup="${backup_dir}/ims-log-${timestamp}.gz"
 
