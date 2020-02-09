@@ -230,16 +230,13 @@ The local mysql password will be required.
 
 6. Verify the load was correct by trying to log into ranger-clubhouse.nv.burningman.org
 
-### Rebuild the Photo Status cache, and download mugshots.
+### Copy the photos down from the S3 bucket to the local server
 
-1. Log in to the on playa Clubhouse with an Admin account.
-
-2. Change the PhotoStoreLocally setting to true.
-
-3. Go back to the server terminal, and as the rangers account in the ranger-playa-ops directory, rebuild the photo cache and download the images:
+1. On the local terminal, as the rangers account, down load & sync the images:
 
 ```sh
-$ ./bin/rangers-exec api.1 php artisan lambase:syncphotos
+$ TODO-WRITE-THIS-COMMAND
+
 ```
 
 This command may take several minutes to run depending on how congested the playa Internet link is.
@@ -255,8 +252,7 @@ Under inbound settings set "Request URL" to
 https://ranger-clubhouse.nv.burningman.org/api/sms/inbound
 
 
-
-## One last thing before going live - test for mysql port exposure
+## Test mysql port exposure
 
 On another machine, NOT ON THE SERVER, check to see if the mysql port is exposed:
 
