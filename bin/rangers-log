@@ -2,7 +2,7 @@
 
 if [[ $# -eq 0 ]] ; then
   echo "Show a service logs"
-  echo "Usage: $0 {api|client|classic|smtpd|db|nginx}";
+  echo "Usage: $0 {api|client|smtpd|db|nginx}";
   exit 1;
 fi
 

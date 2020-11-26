@@ -4,7 +4,7 @@ workingdir="$(cd "$(dirname "$0")/.." && pwd)";
 
 if [[ $# -eq 0 ]]; then
   echo "Execute a command within a service."
-  echo "Usage: $0 {api.1|api.2|client|db|nginx|classic} command-to-run"
+  echo "Usage: $0 {api.1|api.2|client|db|nginx} command-to-run"
   exit 1
 fi
 

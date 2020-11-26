@@ -37,8 +37,8 @@ services:
     dns:
       - 8.8.8.8
       - 8.8.4.4
- 
-  # Clubhouse 2 frontend
+
+  # IMS server
   ims:
     build:
       context: ./src/ranger-ims-server
@@ -55,23 +55,6 @@ services:
       - 8.8.8.8
       - 8.8.4.4
 
-
-  # Classic Clubhouse
-  classic:
-    build:
-      context: ./src/classic
-      dockerfile: ./docker-playa/Dockerfile
-    image: classic:prod
-    env_file: .rangers.env
-    restart: unless-stopped
-    tty: true
-    ports:
-      - "127.0.0.1:8300:80"
-    dns:
-      - 8.8.8.8
-      - 8.8.4.4
-    depends_on:
-      - db
 
   # Web server load balancer/frontend
   nginx:

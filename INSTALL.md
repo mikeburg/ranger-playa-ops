@@ -167,7 +167,6 @@ Ignoring unsupported options: build
 
 Creating network rangers_default
 Creating service rangers_client
-Creating service rangers_classic
 Creating service rangers_nginx
 Creating service rangers_db
 Creating service rangers_smtpd
@@ -183,7 +182,6 @@ sbag9v1bh377 rangers_nginx.1     nginx:prod      man_side_ranger  Running       
 ssv2qvjbmaae rangers_api.1       apiserver:prod  man_side_ranger  Running        Running 25 seconds ago
 khupgancf0or rangers_smtpd.1     smtpd:prod      man_side_ranger  Running        Running 27 seconds ago
 xtk6reoez7ju rangers_db.1        mysql:5.6       man_side_ranger  Running        Running 29 seconds ago
-rxa4vuabthkn rangers_classic.1   classic:prod    man_side_ranger  Running        Running 31 seconds ago
 kanr98oje1jb rangers_client.1    client:prod     man_side_ranger  Running        Running 31 seconds ago
 w1f6dwbdtg8k rangers_api.2       apiserver:prod  man_side_ranger  Running        Running 24 seconds ago
 ```
@@ -287,7 +285,6 @@ Feel the Ranger love..
 |---------|---------------------------|--------------------------------|
 | api     | Clubhouse 2 API backend   | ./src/api                      |
 | client  | Clubhouse 2  web client   | ./src/client                   |
-| classic | Clubhouse 1               | ./src/classic                  |
 | smtpd   | Postfix SMTP relay        | ./services/smtpd + docker hub  |
 | nginx   | Nginx frontend            | ./serviices/nginx + docker hub |
 | db      | Mysql 5.6                 | docker hub mysql:5.6           |

@@ -2,7 +2,7 @@
 
 if [[ $# -eq 0 ]] ; then
   echo "Build a specific service image."
-  echo "Usage: $0 {api|classic|client|db|nginx|smtpd}"
+  echo "Usage: $0 {api|client|db|nginx|smtpd}"
   exit 1
 fi
 

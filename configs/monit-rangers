@@ -8,7 +8,7 @@ set alert youngfrankenstein@burningman.org
 
 set httpd port 9100 allow monit:monit
 
-set mailserver email-smtp.us-west-2.amazonaws.com port 587 
+set mailserver email-smtp.us-west-2.amazonaws.com port 587
     username FILLME password FILLME
     using TLSV1 with timeout 30 seconds
 
@@ -60,11 +60,4 @@ check host clubhouse-api address 127.0.0.1
       port 8200
       protocol http
       request "/api/config"
-   then exec "/usr/local/bin/monit-sms"
-
-check host clubhouse-classic address 127.0.0.1
-   if failed
-      port 8300
-      protocol http
-      request "/clubhouse/?healthcheck=1"
    then exec "/usr/local/bin/monit-sms"
