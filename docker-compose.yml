@@ -19,7 +19,7 @@ services:
       - 8.8.8.8
       - 8.8.4.4
     volumes:
-      - ./data/mugshots:/var/www/application/storage/mugshots
+      - ./data/photos:/var/www/application/storage/photos
     depends_on:
       - db
     restart: unless-stopped
@@ -79,7 +79,7 @@ services:
 
   #MySQL Service
   db:
-    image: mysql:5.6
+    image: mariadb:10.5.12
     env_file: .rangers.env
     restart: unless-stopped
     tty: true
@@ -90,7 +90,7 @@ services:
 
   #Radio  logger
   radiodb:
-    image: mysql:5.6
+    image: mariadb:10.5.12
     env_file: .radiodb.env
     restart: unless-stopped
     tty: true

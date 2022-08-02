@@ -4,7 +4,7 @@
 
 TBD: Talk with BMIT and find out what the IP address, router, and other bits are.
 
-### Adjust the existing Ubuntu 18 (Bionic) configuration
+### Adjust the existing Ubuntu 22 configuration
 
 1. As root, remove postfix, remove nginx, and uninstall Docker.
 ```sh
@@ -13,6 +13,10 @@ TBD: Talk with BMIT and find out what the IP address, router, and other bits are
 # snap remove docker
 # rm -R /var/lib/docker
 ```
+apt-get update
+apt-get install ufw
+apt-get install git-all
+apt install inetutils-ping
 
 ### Configure and enable the firewall
 
@@ -53,9 +57,14 @@ https://docs.docker.com/compose/install/
 
 ### Create 'rangers' account
 
-```sh
-# useradd -m -G sudo,docker rangers
-# passwd rangers
+```shell
+useradd -m -G sudo,docker rangers
+passwd rangers
+```
+
+or
+```shell
+usermod -a -G docker ranger
 ```
 
 Remember the password and pass it on to the other Tech Ops team members.

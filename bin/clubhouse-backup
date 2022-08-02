@@ -6,12 +6,12 @@ ops_bin=${ops_dir}/bin
 backup_dir=${ops_dir}/data/backups
 timestamp=$(date +'%Y-%m-%d-%H-%M')
 clubhouse_tmp=$(mktemp /tmp/rangers-backup.XXXXXX.sql)
-clubhouse_backup="${backup_dir}/rangers-${timestamp}.sql.gz"
+clubhouse_backup="${backup_dir}/rangers-${timestamp}.sql.bz2"
 
 ims_tmp=$(mktemp /tmp/ims-backup.XXXXXX.sql)
-ims_backup="${backup_dir}/ims-db-${timestamp}.sql.gz"
+ims_backup="${backup_dir}/ims-db-${timestamp}.sql.bz2"
 
-ims_log_backup="${backup_dir}/ims-log-${timestamp}.gz"
+ims_log_backup="${backup_dir}/ims-log-${timestamp}.bz2"
 
 remote_account="rangers@burg.me"
 remote_dir="backups"
@@ -31,20 +31,20 @@ mkdir -p ${backup_dir}
 echo "** Backing up to ${clubhouse_backup}"
 ${ops_bin}/rangers-exec db /bin/bash -c "/usr/bin/mysqldump --ignore-table=rangers.log -u rangers --password=\"\${MYSQL_PASSWORD}\" rangers" > ${clubhouse_tmp}
 echo "** Compressing"
-gzip < ${clubhouse_tmp} > ${clubhouse_backup}
-echo "*** transfering clubhouse"
+bzip2 < ${clubhouse_tmp} > ${clubhouse_backup}
+echo "*** transferring clubhouse"
 scp ${clubhouse_backup} ${remote_account}:${remote_dir}
 
 echo "** Backing up to ${ims_backup}"
 ${ops_bin}/rangers-exec db /bin/bash -c "/usr/bin/mysqldump -u rangers --password=\"\${MYSQL_PASSWORD}\" ims" > ${ims_tmp}
 echo "** Compressing"
-gzip < ${ims_tmp} > ${ims_backup}
-echo "*** transfering ims"
+bzip < ${ims_tmp} > ${ims_backup}
+echo "*** transferring ims"
 scp ${ims_backup} ${remote_account}:${remote_dir}
 
 echo "** Backing up to ${ims_log_backup}"
-gzip < "${ops_dir}/data/ims/ims_server.log" > "${ims_log_backup}"
-echo "*** transfering ims"
+bzip < "${ops_dir}/data/ims/ims_server.log" > "${ims_log_backup}"
+echo "*** transferring ims"
 scp "${ims_log_backup}" "${remote_account}:${remote_dir}"
 
 echo "*** Finished in ${SECONDS} seconds."

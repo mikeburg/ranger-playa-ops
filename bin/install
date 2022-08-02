@@ -6,11 +6,10 @@ set -u
 github_org_url=https://github.com/burningmantech
 
 echo "** Creating data and src directories"
-mkdir -p data data/certs data/mysql data/postfix data/mugshots src
-chmod 777 data/mysql data/postfix data/mugshots
+mkdir -p data data/certs data/mysql data/postfix data/photos src
+chmod 777 data/mysql data/postfix data/photos
 
 echo "** Installing repositories."
-echo "** You may be prompted for a github account and password in order to pull down the old Clubhouse 1 repository."
 
 echo "** Cloning Clubhouse 2 API repo"
 git clone ${github_org_url}/ranger-clubhouse-api src/api

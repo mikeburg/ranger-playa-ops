@@ -5,4 +5,5 @@
 ACCOUNTSID=<FILL ME>
 AUTHTOKEN=<FILL ME>
 
+# The number to text from. Same as the Clubhouse
 CALLERID=+14158542548
