@@ -1,0 +1,59 @@
+#!/bin/bash
+
+workingdir="$(cd "$(dirname "$0")/.." && pwd)"
+env="$workingdir/.rangers.env"
+
+function setaws {
+  export $1="$(getvar $2)"
+}
+
+function getvar {
+  val="${!1}"
+  if [ "$val" == "" ]; then
+    echo "$1 is blank" 1>&2
+    kill -s INT $$
+  fi
+
+  echo "$val"
+}
+
+if [ ! -f "$env" ]; then
+  echo $env does not exist. Are you in the right directory?
+  exit -1
+fi
+
+. "$env"
+
+if [ "$#" -eq 0 ]; then
+  echo "Sync the photos to/from the S3 and the local machine."
+  echo "Usage: $0 -d {to|from} where to=sync from here to S3, from=sync from S3 to here."
+  exit 1
+fi
+
+while getopts "d:" OPT; do
+  case "$OPT" in
+  d)
+    dir="$OPTARG"
+    if [ "$dir" != "to" ] && [ "$dir" != "from" ]; then
+      echo "Direction is neither to nor from"
+      exit -1
+    fi
+    ;;
+  esac
+done
+
+echo "Syncing direction $dir"
+
+setaws AWS_ACCESS_KEY_ID RANGER_CLUBHOUSE_S3_ACCESS_KEY
+setaws AWS_SECRET_ACCESS_KEY RANGER_CLUBHOUSE_S3_ACCESS_SECRET
+setaws AWS_DEFAULT_REGION RANGER_CLUBHOUSE_S3_DEFAULT_REGION
+
+bucket="$(getvar RANGER_CLUBHOUSE_S3_BUCKET)"
+
+if [ "$dir" == "from" ]; then
+  echo "Syncing FROM S3 to the local server";
+  aws s3 sync "s3://${bucket}/photos" data/photos
+else
+  echo "Syncing to S3 from the local server";
+  aws s3 sync data/photos "s3://${bucket}/photos" --acl public-read
+fi

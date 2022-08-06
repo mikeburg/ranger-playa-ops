@@ -72,7 +72,7 @@ services:
       - 8.8.4.4
     volumes:
       - ./data/certs:/etc/nginx/certs
-      - ./data/mugshots:/mugshots
+      - ./data/photos:/photos
     depends_on:
       - api
       - client

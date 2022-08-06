@@ -13,12 +13,16 @@ ims_backup="${backup_dir}/ims-db-${timestamp}.sql.bz2"
 
 ims_log_backup="${backup_dir}/ims-log-${timestamp}.bz2"
 
-remote_account="rangers@burg.me"
-remote_dir="backups"
+s3_bucket="ranger-photos"
+s3_dirname="playa-backups"
 
 function finish {
   rm -f "${clubhouse_tmp}"
   rm -f "${ims_tmp}"
+}
+
+function  xfer {
+  aws s3 cp $1 s3://${s3_bucket}/${s3_dirname}
 }
 
 trap finish EXIT INT QUIT
@@ -29,23 +33,28 @@ SECONDS=0
 mkdir -p ${backup_dir}
 
 echo "** Backing up to ${clubhouse_backup}"
-${ops_bin}/rangers-exec db /bin/bash -c "/usr/bin/mysqldump --ignore-table=rangers.log -u rangers --password=\"\${MYSQL_PASSWORD}\" rangers" > ${clubhouse_tmp}
+${ops_bin}/rangers-exec db /bin/bash -c "/usr/bin/mysqldump --quick --extended-insert  --single-transaction --ignore-table=rangers.log -u rangers --password=\"\${MYSQL_PASSWORD}\" rangers" > ${clubhouse_tmp}
+
 echo "** Compressing"
 bzip2 < ${clubhouse_tmp} > ${clubhouse_backup}
-echo "*** transferring clubhouse"
-scp ${clubhouse_backup} ${remote_account}:${remote_dir}
 
 echo "** Backing up to ${ims_backup}"
-${ops_bin}/rangers-exec db /bin/bash -c "/usr/bin/mysqldump -u rangers --password=\"\${MYSQL_PASSWORD}\" ims" > ${ims_tmp}
+${ops_bin}/rangers-exec db /bin/bash -c "/usr/bin/mysqldump --quick --extended-insert  --single-transaction -u rangers --password=\"\${MYSQL_PASSWORD}\" ims" > ${ims_tmp}
+
 echo "** Compressing"
-bzip < ${ims_tmp} > ${ims_backup}
-echo "*** transferring ims"
-scp ${ims_backup} ${remote_account}:${remote_dir}
+bzip2 < ${ims_tmp} > ${ims_backup}
 
 echo "** Backing up to ${ims_log_backup}"
-bzip < "${ops_dir}/data/ims/ims_server.log" > "${ims_log_backup}"
-echo "*** transferring ims"
-scp "${ims_log_backup}" "${remote_account}:${remote_dir}"
+bzip2 < "${ops_dir}/data/ims/ims_server.log" > "${ims_log_backup}"
+
+echo "*** uploading clubhouse sql backup to s3"
+xfer ${clubhouse_backup}
+
+echo "*** uploading ims sql backup to s3"
+xfer ${ims_backup}
+
+echo "*** uploading ims log backup to s3"
+xfer "${ims_log_backup}"
 
 echo "*** Finished in ${SECONDS} seconds."
 
