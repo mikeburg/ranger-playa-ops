@@ -4,13 +4,13 @@
 #
 #
 
-set alert youngfrankenstein@burningman.org
+set alert frankenstein@burningman.org
 
 set httpd port 9100 allow monit:monit
 
 set mailserver email-smtp.us-west-2.amazonaws.com port 587
-    username FILLME password FILLME
-    using TLSV1 with timeout 30 seconds
+    username "FILLME" password "FILLME"
+    using tls with timeout 30 seconds
 
 set limits { networkTimeout: 15 seconds }
 

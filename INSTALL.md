@@ -17,20 +17,28 @@ apt-get update
 apt-get install ufw
 apt-get install git-all
 apt install inetutils-ping
+apt install locales
+locale-gen en_US.UTF-8
+systemctl stop apache2.service
+systemctl disable apache2.service
 
 ### Configure and enable the firewall
 
 The only allowed incoming traffic into the server should be: ssh, http & https, the monit web server.
 
 ```sh
-# ufw default deny incoming
-# ufw default allow outgoing
-# ufw allow 22/tcp
-# ufw allow 80/tcp
-# ufw allow 443/tcp
-# ufw allow 9100/tcp
-# ufw logging off
-# ufw enable
+ufw default deny incoming
+ufw default allow outgoing
+ufw allow 22/tcp
+ufw allow 80/tcp
+ufw allow 443/tcp
+ufw allow 1883/tcp  # MQTT for radio monitor box(es) and the last caller backend
+ufw allow 9200/tcp  # Last Caller App frontend
+ufw allow 9300/tcp  # Last Caller App backend 
+ufw allow 9301/tcp  # Last Caller App websocket 
+#ufw allow 9306/tcp  # Radio GPS logging database (if used)
+ufw logging off
+ufw enable
 ```
 
 ### Install packages via apt get
@@ -49,11 +57,13 @@ Select 'No Configuration' when prompted.
 
 ### Install the latest version of Docker
 
-[Docker version 19.03.0 or later
+Run
+aws configure
+
+[Docker version 20 or later
 https://docs.docker.com/install/linux/docker-ce/ubuntu/
 
-Docker Compose version 1.24.0 or later
-https://docs.docker.com/compose/install/
+apt install docker-compose
 
 ### Create 'rangers' account
 
@@ -77,14 +87,14 @@ The scripts will assume rangers home directory is '/home/rangers'
 1. Pull down the playa ops repo (this repo you're reading now!):
 
 ```sh
-$ git clone https://github.com/burningmantech/ranger-playa-ops.git
+git clone https://github.com/burningmantech/ranger-playa-ops.git
 ```
 
 2. Run the install script which will pull down the Clubhouse repositories, and setup the data directory for use by the Docker services.
 
 ```sh
-$ cd ranger-playa-ops
-$ sh ./bin/install
+cd ranger-playa-ops
+sh ./bin/install
 ```
 
 NOTE: You will be asked for a github username and password in order to pull down the Clubhouse 1 repository.
@@ -92,13 +102,13 @@ NOTE: You will be asked for a github username and password in order to pull down
 2. As root, install all scripts in ./localbin into /usr/local/bin.
 
 ```sh
-# cp ./localbin/* /usr/local/bin/
+cp ./localbin/* /usr/local/bin/
 ```
 
-3. Still as root, install the twilio-sms command config file and edit.
+3. Still as root, install the twilio-sms command config file and edit. monit will use this to send SMS alerts
 
 ```sh
-# cp configs/twiliorc-example /root/.twiliorc
+cp configs/twiliorc-example /root/.twiliorc
 ```
 
 4. Still as root, create /root/.monit-phones, and add all phones numbers wishing to receive monit alerts. One phone number per line in E.164 format - e.g. +14155551212 (plus sign, followed by country code, no spaces or parens)
@@ -109,28 +119,13 @@ NOTE: You will be asked for a github username and password in order to pull down
 # cp configs/monit-rangers /etc/monit/conf.d/rangers
 ```
 
-5. Generate a ~/.ssh/id_rsa.pub file and copyto rangers@burg.me:.ssh/authorized_keys
 
-```sh
-$ ssh-keygen -o
-```
-(hit enter when prompted for the passphrase.)
-
-Log into rangers@burg.me and append the contents of ~rangers/.ssh/id_rsa.pub to rangers@burg.me:.ssh/authorized_keys.
-
-The backup script will use this for off site backups.
-
-6. As rangers, edit the cron file to run the Clubhouse backup on a hourly basis.
+6. As ranger, edit the cron file to run the Clubhouse backup on a hourly basis.
 
 ```cron
-25  * * * * ./bin/ranger-playa-ops/bin/clubhouse-backup full
+25  * * * * ./ranger-playa-ops/bin/clubhouse-backup full
 ```
 
-7. Check ssh credentials were copied over to authorized_keys correctly by ssh into the remote backup account.
-
-```sh
-$ ssh rangers@burg.me
-```
 
 
 ### Start (restart) Monit
@@ -242,7 +237,7 @@ The local mysql password will be required.
 1. On the local terminal, as the rangers account, down load & sync the images:
 
 ```sh
-$ TODO-WRITE-THIS-COMMAND
+$ aws s3 sync s3://ranger-photos/photos ./data/photos
 
 ```
 
@@ -275,9 +270,11 @@ TBD: Set the AWS load balancer to redirect to ranger-clubhouse.nv.burningman.org
 
 ### Congrats, the On Playa Clubhouse is running!
 
-Feel the Ranger love..
+Feel the Ranger love
 
-### Summary of files which require credentials
+### Credentials
+
+What files need what for credentials.
 
 | File                                   | Credentials needed                        |
 --------------------------------------------------------------------------------------
@@ -290,11 +287,11 @@ Feel the Ranger love..
 
 ### Container names
 
-| Name    | Description               | Built from                     |
-|---------|---------------------------|--------------------------------|
-| api     | Clubhouse 2 API backend   | ./src/api                      |
-| client  | Clubhouse 2  web client   | ./src/client                   |
-| smtpd   | Postfix SMTP relay        | ./services/smtpd + docker hub  |
-| nginx   | Nginx frontend            | ./serviices/nginx + docker hub |
-| db      | Mysql 5.6                 | docker hub mysql:5.6           |
+| Name    | Description             | Built from                     |
+|---------|-------------------------|--------------------------------|
+| api     | Clubhouse 2 API backend | ./src/api                      |
+| client  | Clubhouse 2  web client | ./src/client                   |
+| smtpd   | Postfix SMTP relay      | ./services/smtpd + docker hub  |
+| nginx   | Nginx frontend          | ./serviices/nginx + docker hub |
+| db      | MariaDB                 | docker hub mariadb:10.5.12     |
 ------------------------------------------------------------------------

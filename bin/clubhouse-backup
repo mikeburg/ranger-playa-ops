@@ -2,27 +2,35 @@
 
 ops_dir="$(cd "$(dirname "$0")/.." && pwd)";
 
+export $(grep '^\w' ${ops_dir}/.rangers.env | xargs)
+
 ops_bin=${ops_dir}/bin
 backup_dir=${ops_dir}/data/backups
 timestamp=$(date +'%Y-%m-%d-%H-%M')
 clubhouse_tmp=$(mktemp /tmp/rangers-backup.XXXXXX.sql)
-clubhouse_backup="${backup_dir}/rangers-${timestamp}.sql.bz2"
+clubhouse_backup="${backup_dir}/rangers-${timestamp}.sql.gz"
 
 ims_tmp=$(mktemp /tmp/ims-backup.XXXXXX.sql)
-ims_backup="${backup_dir}/ims-db-${timestamp}.sql.bz2"
+ims_backup="${backup_dir}/ims-db-${timestamp}.sql.gz"
 
-ims_log_backup="${backup_dir}/ims-log-${timestamp}.bz2"
+ims_log_backup="${backup_dir}/ims-log-${timestamp}.gz"
 
 s3_bucket="ranger-photos"
 s3_dirname="playa-backups"
 
-function finish {
+export AWS_ACCESS_KEY_ID=${RANGER_CLUBHOUSE_S3_ACCESS_KEY}
+export AWS_SECRET_ACCESS_KEY=${RANGER_CLUBHOUSE_S3_ACCESS_SECRET}
+export AWS_DEFAULT_REGION=${RANGER_CLUBHOUSE_S3_DEFAULT_REGION}
+
+echo "Default region ${AWS_DEFAULT_REGION}"
+
+finish() {
   rm -f "${clubhouse_tmp}"
   rm -f "${ims_tmp}"
 }
 
-function  xfer {
-  aws s3 cp $1 s3://${s3_bucket}/${s3_dirname}
+xfer() {
+  aws s3 cp $1 s3://${s3_bucket}/${s3_dirname}/$(basename $1)
 }
 
 trap finish EXIT INT QUIT
@@ -36,16 +44,16 @@ echo "** Backing up to ${clubhouse_backup}"
 ${ops_bin}/rangers-exec db /bin/bash -c "/usr/bin/mysqldump --quick --extended-insert  --single-transaction --ignore-table=rangers.log -u rangers --password=\"\${MYSQL_PASSWORD}\" rangers" > ${clubhouse_tmp}
 
 echo "** Compressing"
-bzip2 < ${clubhouse_tmp} > ${clubhouse_backup}
+gzip < ${clubhouse_tmp} > ${clubhouse_backup}
 
 echo "** Backing up to ${ims_backup}"
 ${ops_bin}/rangers-exec db /bin/bash -c "/usr/bin/mysqldump --quick --extended-insert  --single-transaction -u rangers --password=\"\${MYSQL_PASSWORD}\" ims" > ${ims_tmp}
 
 echo "** Compressing"
-bzip2 < ${ims_tmp} > ${ims_backup}
+gzip < ${ims_tmp} > ${ims_backup}
 
 echo "** Backing up to ${ims_log_backup}"
-bzip2 < "${ops_dir}/data/ims/ims_server.log" > "${ims_log_backup}"
+gzip < "${ops_dir}/data/ims/ims_server.log" > "${ims_log_backup}"
 
 echo "*** uploading clubhouse sql backup to s3"
 xfer ${clubhouse_backup}

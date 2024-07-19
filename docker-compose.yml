@@ -1,11 +1,25 @@
 #
 # Docker Compose for on playa operations
 #
+# Exposed port assignments:
 #
-version: '3.7'
+# 80: Nginx (http, unsecured) for Clubhouse & IMS, redirects to https
+# 443: Nginx (https, secured) for Clubhouse  & IMS
+#
+# 8306: Clubhouse/IMS/Radio Monitor database, localhost only for monit
+# 8400: IMS localhost only for monit 
+# 8100: Clubhouse frontend, localhost only for monit
+# 8025: SMTPD, localhost only for monit
+# 8587: SMTPD (tls), localhost only for monit
+# 9200: Radio Monitor dashboard frontend
+# 9300: Radio Monitor dashboard backend, web server
+# 9301: Radio Monitor dashboard backend, web socket
+# 9306: Radio GPS Logger database
+
+version: '3.8'
 
 services:
-  # API backend
+  # Clubhouse backend (API)
   api:
     build:
       context: ./src/api
@@ -77,7 +91,7 @@ services:
       - api
       - client
 
-  #MySQL Service
+  # MySQL Service
   db:
     image: mariadb:10.5.12
     env_file: .rangers.env
@@ -88,16 +102,27 @@ services:
     volumes:
       - ./data/mysql:/var/lib/mysql
 
-  #Radio  logger
-  radiodb:
+  # Radio GPS Logger DB
+  #radio-gps-db:
+  #  image: mariadb:10.5.12
+  #  env_file: .radio-gps.env
+  #  restart: unless-stopped
+  #  tty: true
+  #  ports:
+  #    - "9306:3306"
+  #  volumes:
+  #    - ./data/mariadb-radio-gps:/var/lib/mysql
+
+  # Radio Monitor DB
+  radio-monitor-db:
     image: mariadb:10.5.12
-    env_file: .radiodb.env
+    env_file: .radio-server.env
     restart: unless-stopped
     tty: true
     ports:
-      - "9306:3306"
+      - "9310:3306"
     volumes:
-      - ./data/mysql-radio:/var/lib/mysql
+      - ./data/mariadb-radio-monitor:/var/lib/mysql
 
   # SMTP Relay Server
   smtpd:
@@ -122,3 +147,37 @@ services:
 
     volumes:
       - ./data/postfix:/var/spool/postfix
+
+  # Radio Monitor Dashboard
+  # Port 9200
+  last-caller-app:
+    build:
+      context: ./src/last-caller-app
+      dockerfile: Dockerfile
+    image: last-caller-app:prod
+    tty: true
+    restart: unless-stopped
+    ports:
+      - "9200:80"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+
+  # Radio Monitor Server
+  # port 9300, web server requests
+  # Port 9301, web socket
+  radio-server:
+    build:
+      context: ./src/radio-server
+      dockerfile: Dockerfile
+    image: radio-server:prod
+    env_file: .radio-server.env
+    tty: true
+    restart: unless-stopped
+    ports:
+      - "9300:9300"
+      - "9301:9301"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - db
