@@ -4,15 +4,15 @@
 
 TBD: Talk with BMIT and find out what the IP address, router, and other bits are.
 
-### Adjust the existing Ubuntu 22 configuration
+### Adjust the existing Ubuntu 24 configuration
 
-1. As root, remove postfix, remove nginx, and uninstall Docker.
+1. As root, remove postfix, remove nginx, and uninstall snap. We want a specific version of apps that snap does not supply.
 ```sh
-# apt-get purge postfix
-# apt-get purge nginx nginx-common
-# snap remove docker
-# rm -R /var/lib/docker
-```
+apt-get purge postfix
+apt-get purge nginx nginx-common
+apt remove snapd
+apt autopurge
+
 apt-get update
 apt-get install ufw
 apt-get install git-all
@@ -21,6 +21,7 @@ apt install locales
 locale-gen en_US.UTF-8
 systemctl stop apache2.service
 systemctl disable apache2.service
+```
 
 ### Configure and enable the firewall
 
@@ -44,26 +45,22 @@ ufw enable
 ### Install packages via apt get
 
 ```sh
-# apt install certbot
-# apt install git
-# apt install monit
-# apt install lm-sensors
+apt install certbot
+apt install git
+apt install monit
+apt install lm-sensors
+apt install mailutils
 ```
-
-```sh
-# apt install mailutils
-```
-Select 'No Configuration' when prompted.
+For mailutils, select 'No Configuration' when prompted.
 
 ### Install the latest version of Docker
 
-Run
-aws configure
-
-[Docker version 20 or later
+Docker version 20 or later
 https://docs.docker.com/install/linux/docker-ce/ubuntu/
 
+```shell
 apt install docker-compose
+```
 
 ### Create 'rangers' account
 
@@ -146,9 +143,30 @@ The docker stack should be stopped, and no other web services running on port 80
 As rangers, and in the ranger-playa-ops directory run certbot:
 
 ```sh
-$ certbot certonly --config-dir ./data/certs --standalone -d ranger-clubhouse.nv.burningman.org
-$ certbot certonly --config-dir ./data/certs --standalone -d ranger-ims.nv.burningman.org
+certbot certonly --config-dir ./data/certs --standalone -d ranger-clubhouse.nv.burningman.org
+certbot certonly --config-dir ./data/certs --standalone -d ranger-ims.nv.burningman.org
 ```
+
+### Setup the mosquitto MQTT server (used by the radio monitor to send messages to the last caller app backend)
+
+1. Install the mosquito MQTT server (use sudo)
+```shell
+apt install mosquito mosquitto-clients
+```
+
+2. Obtain the password file and install at /etc/mosquitto/pwfile
+
+3. Enable the service (use sudo)
+
+```shell
+systemctl enable mosquitto.service
+```
+
+### Install the AWS cli 
+
+The AWS cli is used by the backup cron script to upload Clubhouse & IMS database snapshots to the Ranger S3 bucket. The photo syncing script also uses the command to copy the photos locally at the start of the event, and to copy up to S3 any new photos uploaded during the event. (very rare but it does happen)
+
+Follow the instructions at https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
 
 ### Setup, Build, And Start the Docker Clubhouse stack.
 
@@ -159,13 +177,18 @@ $ certbot certonly --config-dir ./data/certs --standalone -d ranger-ims.nv.burni
 3. Build the stack!
 
 ```sh
-$ ./bin/rangers-build-all
+./bin/rangers-build-all
 ```
 
 4. Launch the stack! The mysql service may take upwards to a minute the first time it is launched.
 
 ```sh
-$ ./bin/rangers-start
+./bin/rangers-start
+```
+
+The output will look something like the following:
+
+```
 ** Deploying Ranger stack (may receive warning about 'Ignoring unsupported options' -- safe to disregard)
 Ignoring unsupported options: build
 
