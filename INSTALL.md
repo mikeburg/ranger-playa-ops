@@ -239,7 +239,12 @@ During the 15 minute countdown, go take a break. Think happy thoughts. The fun i
 
 1. Log into AWS and stop ALL production client & api instances. Wait until all instances have been stopped. (TBD: set instance count to zero maybe?)
 
-2. On blaster, dump the production database. Suggested naming is rangers-YYYY-MM-DD.sql. Compress with gzip.
+2. On blaster, dump the production database. Suggested naming is rangers-YYYY-MM-DD.sql. Compress with gzip. Suggest dump command is:
+```shell
+ mysqldump -h <AWSHOSTNAME> -u ranger_ch_prod --quick --extended-insert  --single-t
+ransaction ranger_ch_prod | gzip > rangers-YYYY-MM-DD.sql.gz
+sql.gz
+```
 
 3. Copy the database down to the server into the rangers account.
 

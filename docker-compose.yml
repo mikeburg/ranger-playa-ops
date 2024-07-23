@@ -1,26 +1,28 @@
 #
 # Docker Compose for on playa operations
 #
-# Exposed port assignments:
+# Exposed docker ports
 #
-# 80: Nginx (http, unsecured) for Clubhouse & IMS, redirects to https
-# 443: Nginx (https, secured) for Clubhouse  & IMS
+# 80: Nginx (http) for Clubhouse & IMS, redirects to https
+# 443: Nginx (https) for Clubhouse  & IMS
 #
 # 8306: Clubhouse/IMS/Radio Monitor database, localhost only for monit
 # 8400: IMS localhost only for monit 
 # 8100: Clubhouse frontend, localhost only for monit
 # 8025: SMTPD, localhost only for monit
 # 8587: SMTPD (tls), localhost only for monit
-# 9200: Radio Monitor dashboard frontend
-# 9300: Radio Monitor dashboard backend, web server
-# 9301: Radio Monitor dashboard backend, web socket
-# 9306: Radio GPS Logger database
+# 9200: Last Caller frontend
+# 9300: Last Caller backend, web server
+# 9301: Last Caller backend, web socket (stream)
+# 9306: Radio GPS Logger database, connected to by a server at the Lighthouse
+# 9500: Nginx http only for WordPress. Will bind only to the DHCP local playa IP address
 
-version: '3.8'
+name: ranger
 
 services:
   # Clubhouse backend (API)
   api:
+    hostname: api
     build:
       context: ./src/api
       dockerfile: Dockerfile
@@ -40,6 +42,7 @@ services:
 
   # Clubhouse 2 frontend
   client:
+    hostname: client
     build:
       context: ./src/client
       dockerfile: Dockerfile
@@ -54,6 +57,7 @@ services:
 
   # IMS server
   ims:
+    hostname: ims
     build:
       context: ./src/ranger-ims-server
       dockerfile: Dockerfile
@@ -70,8 +74,9 @@ services:
       - 8.8.4.4
 
 
-  # Web server load balancer/frontend
+  # Web server for the Clubhouse and NGINX
   nginx:
+    hostname: nginx
     build:
       context: ./services/nginx
       dockerfile: Dockerfile
@@ -91,8 +96,9 @@ services:
       - api
       - client
 
-  # MySQL Service
+  # Database for the Clubhouse and IMS
   db:
+    hostname: db
     image: mariadb:10.5.23
     env_file: .rangers.env
     restart: unless-stopped
@@ -111,21 +117,26 @@ services:
   #  ports:
   #    - "9306:3306"
   #  volumes:
-  #    - ./data/mariadb-radio-gps:/var/lib/mysql
+  #    - ./data/radio-gps-db:/var/lib/mysql
 
-  # Radio Monitor DB
-  radio-monitor-db:
+  # Last Caller radio call database
+  last-caller-db:
+    hostname: last-caller-db
     image: mariadb:10.5.23
-    env_file: .radio-server.env
+    env_file: .last-caller.env
     restart: unless-stopped
     tty: true
     ports:
       - "9310:3306"
     volumes:
-      - ./data/mariadb-radio-monitor:/var/lib/mysql
+      - ./data/last-caller-db:/var/lib/mysql
 
-  # SMTP Relay Server
+  # SMTP Relay Server to AWS SES. This allows the Clubhouse to send mail without having
+  # to worry if the Internet link drops out, if SES throttling limits are reached, and/or
+  # tying up a worker thread.
+  # The RBS can potentially generate close to 1,000+ messages in one go when sending an emergency broadcast.
   smtpd:
+    hostname: smtpd
     build:
       context: ./services/smtpd
       dockerfile: Dockerfile
@@ -148,9 +159,10 @@ services:
     volumes:
       - ./data/postfix:/var/spool/postfix
 
-  # Radio Monitor Dashboard
+  # Last Caller frontend
   # Port 9200
   last-caller-app:
+    hostname: last-caller-app
     build:
       context: ./src/last-caller-app
       dockerfile: Dockerfile
@@ -163,15 +175,16 @@ services:
       - 8.8.8.8
       - 8.8.4.4
 
-  # Radio Monitor Server
+  # Last Caller backend
   # port 9300, web server requests
-  # Port 9301, web socket
-  radio-server:
+  # Port 9301, web socket live feed
+  last-caller-backend:
+    hostname: last-caller-backend
     build:
       context: ./src/radio-server
       dockerfile: Dockerfile
-    image: radio-server:prod
-    env_file: .radio-server.env
+    image: last-caller-backend:prod
+    env_file: .last-caller.env
     tty: true
     restart: unless-stopped
     ports:
@@ -181,3 +194,40 @@ services:
       - "host.docker.internal:host-gateway"
     depends_on:
       - db
+
+  # Database instance for WordPress
+  wordpress-db:
+    hostname: wordpress-db
+    env_file: .wordpress.env
+    image: mariadb:10.5.23
+    container_name: wordpress-db
+    restart: unless-stopped
+    volumes:
+      - ./data/wordpress-db:/var/lib/mysql
+
+  # WordPres itself
+  wordpress:
+    hostname: wordpress
+    env_file: .wordpress.env
+    depends_on:
+      - wordpress-db
+    image: wordpress:6.6.0-fpm-alpine
+    container_name: wordpress
+    restart: unless-stopped
+    volumes:
+      - ./data/wordpress:/var/www/html
+
+  # Nginx frontend for WordPress
+  wordpress-nginx:
+    hostname: wordpress-nginx
+    depends_on:
+      - wordpress
+    image: nginx:1.26.1-alpine
+    container_name: wordpress-webserver
+    restart: unless-stopped
+    ports:
+      - "9500:80"
+    volumes:
+      - ./data/wordpress:/var/www/html
+      - ./services/wordpress-nginx:/etc/nginx/conf.d
+
