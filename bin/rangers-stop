@@ -2,4 +2,4 @@
 
 echo "** Stopping services"
 
-docker-compose -f docker-compose.yml -p rangers down
+docker compose -f docker-compose.yml -p rangers down

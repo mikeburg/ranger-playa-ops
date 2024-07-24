@@ -3,4 +3,4 @@
 set -x
 
 echo "** Building all stack images"
-exec docker-compose -f docker-compose.yml build
+exec docker compose -f docker-compose.yml build

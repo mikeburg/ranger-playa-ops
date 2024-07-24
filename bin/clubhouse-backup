@@ -2,7 +2,9 @@
 
 ops_dir="$(cd "$(dirname "$0")/.." && pwd)";
 
-export $(grep '^\w' ${ops_dir}/.rangers.env | xargs)
+set -a
+. ${ops_dir}/.rangers.env
+set +a
 
 ops_bin=${ops_dir}/bin
 backup_dir=${ops_dir}/data/backups
@@ -15,6 +17,9 @@ ims_backup="${backup_dir}/ims-db-${timestamp}.sql.gz"
 
 ims_log_backup="${backup_dir}/ims-log-${timestamp}.gz"
 
+radio_tmp=$(mktemp /tmp/last-caller-backup.XXXXXX.sql)
+radio_backup="${backup_dir}/last-caller-${timestamp}.sql.gz"
+
 s3_bucket="ranger-photos"
 s3_dirname="playa-backups"
 
@@ -24,12 +29,13 @@ export AWS_DEFAULT_REGION=${RANGER_CLUBHOUSE_S3_DEFAULT_REGION}
 
 echo "Default region ${AWS_DEFAULT_REGION}"
 
-finish() {
+function finish {
   rm -f "${clubhouse_tmp}"
   rm -f "${ims_tmp}"
+  rm -f "${radio_tmp}"
 }
 
-xfer() {
+function xfer {
   aws s3 cp $1 s3://${s3_bucket}/${s3_dirname}/$(basename $1)
 }
 
@@ -41,19 +47,19 @@ SECONDS=0
 mkdir -p ${backup_dir}
 
 echo "** Backing up to ${clubhouse_backup}"
-${ops_bin}/rangers-exec db /bin/bash -c "/usr/bin/mysqldump --quick --extended-insert  --single-transaction --ignore-table=rangers.log -u rangers --password=\"\${MYSQL_PASSWORD}\" rangers" > ${clubhouse_tmp}
+mysqldump --host=127.0.0.1 --port=8306 --quick --extended-insert  --single-transaction -u rangers --password="${MYSQL_PASSWORD}" rangers > ${clubhouse_tmp}
 
 echo "** Compressing"
 gzip < ${clubhouse_tmp} > ${clubhouse_backup}
 
 echo "** Backing up to ${ims_backup}"
-${ops_bin}/rangers-exec db /bin/bash -c "/usr/bin/mysqldump --quick --extended-insert  --single-transaction -u rangers --password=\"\${MYSQL_PASSWORD}\" ims" > ${ims_tmp}
+mysqldump --host=127.0.0.1 --port=8306 --quick --extended-insert  --single-transaction -u rangers --password="${MYSQL_PASSWORD}" ims > ${ims_tmp}
 
 echo "** Compressing"
 gzip < ${ims_tmp} > ${ims_backup}
 
-echo "** Backing up to ${ims_log_backup}"
-gzip < "${ops_dir}/data/ims/ims_server.log" > "${ims_log_backup}"
+#echo "** Backing up to ${ims_log_backup}"
+#gzip < "${ops_dir}/data/ims/ims_server.log" > "${ims_log_backup}"
 
 echo "*** uploading clubhouse sql backup to s3"
 xfer ${clubhouse_backup}
@@ -61,9 +67,20 @@ xfer ${clubhouse_backup}
 echo "*** uploading ims sql backup to s3"
 xfer ${ims_backup}
 
-echo "*** uploading ims log backup to s3"
-xfer "${ims_log_backup}"
+#echo "*** uploading ims log backup to s3"
+#xfer "${ims_log_backup}"
+
+export $(grep '^\w' ${ops_dir}/.rangers.env | xargs)
+
+echo "** Backing up to ${radio_backup}"
+mysqldump --host=127.0.0.1 --port=9310 --quick --extended-insert  --single-transaction -u radiocall --password="w@all0fv00d00" radiocall > ${radio_tmp}
+echo "** Compressing"
+gzip < ${radio_tmp} > ${radio_backup}
+echo "** upload radio monitor backup to s3"
+xfer ${radio_backup}
+
 
 echo "*** Finished in ${SECONDS} seconds."
+
 
 exit 0

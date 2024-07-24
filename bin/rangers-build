@@ -2,10 +2,10 @@
 
 if [[ $# -eq 0 ]] ; then
   echo "Build a specific service image."
-  echo "Usage: $0 {api|client|db|nginx|smtpd}"
+  echo "Usage: $0 {api|client|db|nginx|smtpd|last-caller|radio-server|ims}"
   exit 1
 fi
 
 echo "** Building service $@"
 
-docker-compose -f docker-compose.yml build "$@"
+docker compose -f docker-compose.yml build "$@"

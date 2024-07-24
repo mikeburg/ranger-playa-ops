@@ -22,7 +22,9 @@ if [ ! -f "$env" ]; then
   exit -1
 fi
 
+set -a
 . "$env"
+set +a
 
 if [ "$#" -eq 0 ]; then
   echo "Sync the photos to/from the S3 and the local machine."

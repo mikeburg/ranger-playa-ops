@@ -11,7 +11,7 @@ fi
 name=$1
 shift
 
-service="rangers_${name}_1"
+service="rangers-${name}-1"
 
 if [ -t 0 ]; then
 	tty_args="--tty";
